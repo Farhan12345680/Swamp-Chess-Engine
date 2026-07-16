@@ -7,41 +7,37 @@
     <link rel="stylesheet" href="./css/play_swamp.css">
 </head>
 <body>
-    <div>
-    <div id="eval_bar">
-        
-    </div>
+    
     <div id="chess_board">
         
     </div>
+
+
+    <div id="second_panel">
+    <div class="eval_holder">
+        0
     </div>
-
-
+        
     <div id="button_holder">
         <button id="prev">prev</button>
         <button id="next">next</button>
         <button id="restart">restart</button>
-        <button id="eval_bar_toggle">show eval_bar</button>
+        <button id="eval_bar_toggle">toggle evaluation</button>
+
+    </div>
 
     </div>
 
 
 
-
     <script>
-        // State Holder
-        let show_eval_bar= -1;
+
     </script>
 
 
     <script src="./js/global_functions.js"></script>
     <script src="./js/chess_board.js"></script>
-    <script>
-        createInitialChessGame();
+    <script src="./js/play_swamp.js"></script>
 
-        let restart = document.querySelector("#restart");
-
-        restart.addEventListener('click' , createInitialChessGame); 
-    </script>
 </body>
 </html>
