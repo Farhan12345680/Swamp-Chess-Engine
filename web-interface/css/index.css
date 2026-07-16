@@ -1,0 +1,45 @@
+*{
+    margin  :0px;
+    padding :0px;
+    overflow: hidden;
+}
+
+
+body{
+    width: 99vw;
+    height: 99vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10vh;
+    
+}
+
+a{
+
+    width: max(23vw , 300px);
+    padding: 10px 0px;
+    background: rgb(245, 140, 245);
+    text-align: center;
+    text-justify: center;
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-family: 'Courier New', Courier, monospace;
+    border: 1px solid white;
+}
+
+div{
+    display: flex;
+    flex-direction: column;
+}
+
+img{
+    width: max(20vw , 300px) ;
+
+}
+
+
+h1{
+    font-size: 3rem;
+}

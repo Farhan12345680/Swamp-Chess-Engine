@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Swamp</title>
+    <link rel="stylesheet" href="./css/play_swamp.css">
+</head>
+<body>
+    <div>
+    <div id="eval_bar">
+        
+    </div>
+    <div id="chess_board">
+        
+    </div>
+    </div>
+
+
+    <div id="button_holder">
+        <button id="prev">prev</button>
+        <button id="next">next</button>
+        <button id="restart">restart</button>
+        <button id="eval_bar_toggle">show eval_bar</button>
+
+    </div>
+
+
+
+
+    <script>
+        // State Holder
+        let show_eval_bar= -1;
+    </script>
+
+
+    <script src="./js/global_functions.js"></script>
+    <script src="./js/chess_board.js"></script>
+    <script>
+        createInitialChessGame();
+
+        let restart = document.querySelector("#restart");
+
+        restart.addEventListener('click' , createInitialChessGame); 
+    </script>
+</body>
+</html>
