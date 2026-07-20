@@ -8,6 +8,10 @@ int main(){
 
     printBoard(_globalGame);
 
-    printf("the number of black pawns %d \n" , __builtin_popcountll(_globalGame._blackPawns));
+    for(int i =0;i<12; i++){
+        for(int j= 0;j<64; j++){
+                
+        }
+    }
 
 }

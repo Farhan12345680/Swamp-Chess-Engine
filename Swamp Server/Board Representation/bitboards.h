@@ -1,6 +1,12 @@
 #pragma once;
 #include "Common.h"
 
+
+//function
+ZorbistKeys generateZorbistNumbers();
+__uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE);
+
+
 typedef struct
 {
     __uint64_t _blackPawns;
@@ -21,17 +27,21 @@ typedef struct
     __uint64_t _whiteOccupancy;
     __uint64_t _occupancy;
 
-    __uint64_t _zobrist_hash;
-    int _randomValues[12][64];
+    __uint64_t _zobristHash;
+
 
 
     __uint64_t *_prevStates;
     int _stateIndex;
     int _totalState;
     
+    int  _numberHalfMoves;
+    int _numberMoves;
 
     char* _castlingAvailable;
     char _pieceToMove;
+
+    char _enpassantFile ;
 
 } GameState;
 
@@ -110,15 +120,43 @@ typedef enum
     WHITE_BISHOP,
     WHITE_KNIGHT,
     WHITE_ROOK,
+    WHITE_PAWN,
     BLACK_KING,
     BLACK_QUEEN,
     BLACK_BISHOP,
     BLACK_KNIGHT,
-    BLACK_ROOK
+    BLACK_ROOK,
+    BLACK_PAWN
 } Pieces;
+
+typedef struct
+{
+    __uint64_t _zorbistPieces[12][64];
+    __uint64_t _zorbistSideToMove;
+    __uint64_t _zorbistCastlingNums[4];
+    __uint64_t _zobistFileNums[8];
+    
+} ZorbistKeys ;
+
+static ZorbistKeys _globalZorbistHashing={};
+
+
+// PRNG (Pseudo Random Number Generator)
+__uint64_t pseudoRandomNumberGenerator(__uint64_t* seed){
+
+    __uint64_t _z = (*seed += 0x9E3779B97F4A7C15ULL);
+
+    _z = (_z ^ (_z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    _z = (_z ^ (_z >> 27)) * 0x94D049BB133111EBULL;
+
+    return _z ^ (_z >> 31);
+}
+
 
 GameState initiaizeNewGame()
 {
+
+    _globalZorbistHashing = generateZorbistNumbers(); 
     GameState _newState;
     _newState._blackPawns = 0b0000000011111111000000000000000000000000000000000000000000000000;
     _newState._whitePawns = 0b0000000000000000000000000000000000000000000000001111111100000000;
@@ -151,13 +189,6 @@ GameState initiaizeNewGame()
                                 _newState._whiteQueens ^ _newState._whiteKing ^
                                 _newState._whiteBishops;
 
-    for (int i = 0; i < 12; i++)
-    {
-        for (int j = 0; j < 64; j++)
-        {
-            _newState._randomValues[i][j] = rand();
-        }
-    }
 
     _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
     _newState._stateIndex = 0;
@@ -165,7 +196,10 @@ GameState initiaizeNewGame()
     _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
     _newState._castlingAvailable= "KQkq";
     _newState._pieceToMove= 'w';
-
+    _newState._zobristHash = generateZorbistHashFromAGameState(_newState);
+    _newState._enpassantFile= '-';
+    _newState._numberMoves=1;
+    _newState._numberHalfMoves=0;
     return _newState;
 }
 
@@ -260,4 +294,88 @@ GameState printBoard(GameState GAME_STATE)
         }
         printf("\n");
     }
+}
+
+
+
+// Zorbist Hashing implementation
+
+ZorbistKeys generateZorbistNumbers(){
+    __uint64_t seed = 0xCAFEBABEDEADBEEFULL;
+    ZorbistKeys _curr; 
+
+    for(int i=0;i<12; i++){
+        for(int j=0 ;j<64; j++){
+            _curr._zorbistPieces[i][j]=pseudoRandomNumberGenerator(&seed);
+        }
+    }
+
+    _curr._zorbistSideToMove=pseudoRandomNumberGenerator(&seed);
+    
+    for(int i=0;i<4; i++){
+        _curr._zorbistCastlingNums[i]=pseudoRandomNumberGenerator(&seed);
+    }
+    
+    for(int i=0;i<8; i++){
+        _curr._zobistFileNums[i]=pseudoRandomNumberGenerator(&seed);
+    }
+
+
+    return _curr; 
+}
+
+__uint64_t generateXORforPiece(Pieces PIECE , __uint64_t PIECE_BIT_MAP){
+    __uint64_t _curr=0 ;
+
+    while(PIECE_BIT_MAP){
+        _curr^=_globalZorbistHashing._zorbistPieces[PIECE][(log2((PIECE_BIT_MAP ^ (PIECE_BIT_MAP & (PIECE_BIT_MAP-1)))))];
+        PIECE_BIT_MAP=PIECE_BIT_MAP & (PIECE_BIT_MAP-1);
+
+    }
+
+
+    return _curr;
+
+}
+
+__uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE){
+    __uint64_t _curr =0;
+
+    
+    _curr ^=    generateXORforPiece(WHITE_KING , GAME_STATE._whiteKing) ^ 
+                generateXORforPiece(WHITE_BISHOP, GAME_STATE._whiteBishops) ^
+                generateXORforPiece(WHITE_QUEEN , GAME_STATE._whiteQueens) ^
+                generateXORforPiece(WHITE_KNIGHT , GAME_STATE._whiteKnights) ^
+                generateXORforPiece(WHITE_ROOK , GAME_STATE._whiteRooks) ^
+                generateXORforPiece(BLACK_KING  , GAME_STATE._blackKing) ^
+                generateXORforPiece(BLACK_BISHOP, GAME_STATE._blackBishops) ^
+                generateXORforPiece(BLACK_KNIGHT , GAME_STATE._blackKnights) ^
+                generateXORforPiece(BLACK_QUEEN , GAME_STATE._blackQueens) ^
+                generateXORforPiece(BLACK_PAWN, GAME_STATE._blackPawns) ^
+                generateXORforPiece(WHITE_PAWN , GAME_STATE._whitePawns) ;
+
+
+    if(GAME_STATE._castlingAvailable[0]=='K')
+    {
+        _curr^=_globalZorbistHashing._zorbistCastlingNums[0];
+    }
+    if(GAME_STATE._castlingAvailable[1]=='Q')
+    {
+        _curr^=_globalZorbistHashing._zorbistCastlingNums[1];
+    }
+    if(GAME_STATE._castlingAvailable[2]=='k')
+    {
+        _curr^=_globalZorbistHashing._zorbistCastlingNums[2];
+    }
+    if(GAME_STATE._castlingAvailable[3]=='q')
+    {
+        _curr^=_globalZorbistHashing._zorbistCastlingNums[3];
+    }
+
+    if(GAME_STATE._enpassantFile != '-')
+    {
+        _curr^=_globalZorbistHashing._zobistFileNums[(GAME_STATE._enpassantFile - 'a')];
+    }
+
+    return _curr;
 }

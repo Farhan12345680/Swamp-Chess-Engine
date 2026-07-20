@@ -172,6 +172,8 @@ bool fenStringValidator(char *FEN_STRING)
 
 GameState initializeNewGameFromString(char *FEN_STRING)
 {   
+    _globalZorbistHashing= generateZorbistNumbers();
+    
     GameState _gameState;
     _gameState._blackPawns = 0;
     _gameState._whitePawns = 0;
@@ -275,13 +277,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
                                     _newState._whiteQueens ^ _newState._whiteKing ^
                                     _newState._whiteBishops; 
 
-        for (int i = 0; i < 12; i++)
-        {
-            for (int j = 0; j < 64; j++)
-            {
-                _newState._randomValues[i][j] = rand();
-            }
-        }
+
 
         _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
         _newState._stateIndex = 0;
@@ -297,6 +293,9 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
     char string1[4]="KQkq";
     int i =0;
+
+
+
     while(i<4){
         if(string1[i]== FEN_STRING[_i]){
             _gameState._castlingAvailable[i]=FEN_STRING[_i];
@@ -308,6 +307,28 @@ GameState initializeNewGameFromString(char *FEN_STRING)
             _i++;
         }
     }
+    _i++;
+
+    _gameState._enpassantFile= FEN_STRING[_i];
+    _i++;
     
+    _gameState._zobristHash = generateZorbistHashFromAGameState(_gameState);
+    
+    _gameState._numberHalfMoves=0;
+
+    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
+        _gameState._numberHalfMoves=0 +(FEN_STRING[_i++]-'0');
+    }
+
+    _i++;
+
+    _gameState._numberMoves=0;
+
+    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
+        _gameState._numberMoves=0 +(FEN_STRING[_i++]-'0');
+    }
+
+
     return _gameState;
 }
+
