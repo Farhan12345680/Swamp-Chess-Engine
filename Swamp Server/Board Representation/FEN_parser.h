@@ -173,7 +173,7 @@ bool fenStringValidator(char *FEN_STRING)
 GameState initializeNewGameFromString(char *FEN_STRING)
 {   
     _globalZorbistHashing= generateZorbistNumbers();
-    
+
     GameState _gameState;
     _gameState._blackPawns = 0;
     _gameState._whitePawns = 0;
@@ -304,7 +304,6 @@ GameState initializeNewGameFromString(char *FEN_STRING)
         }else{
             _gameState._castlingAvailable[i]=' ';
             i++;
-            _i++;
         }
     }
     _i++;
@@ -317,7 +316,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
     _gameState._numberHalfMoves=0;
 
     while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
-        _gameState._numberHalfMoves=0 +(FEN_STRING[_i++]-'0');
+        _gameState._numberHalfMoves=_gameState._numberHalfMoves*10 +(FEN_STRING[_i++]-'0');
     }
 
     _i++;
@@ -325,7 +324,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
     _gameState._numberMoves=0;
 
     while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
-        _gameState._numberMoves=0 +(FEN_STRING[_i++]-'0');
+        _gameState._numberMoves=_gameState._numberHalfMoves*10 +(FEN_STRING[_i++]-'0');
     }
 
 
