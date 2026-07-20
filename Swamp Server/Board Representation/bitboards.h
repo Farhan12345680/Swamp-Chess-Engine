@@ -24,9 +24,14 @@ typedef struct
     __uint64_t _zobrist_hash;
     int _randomValues[12][64];
 
+
     __uint64_t *_prevStates;
     int _stateIndex;
     int _totalState;
+    
+
+    char* _castlingAvailable;
+    char _pieceToMove;
 
 } GameState;
 
@@ -157,6 +162,9 @@ GameState initiaizeNewGame()
     _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
     _newState._stateIndex = 0;
     _newState._totalState = 100;
+    _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
+    _newState._castlingAvailable= "KQkq";
+    _newState._pieceToMove= 'w';
 
     return _newState;
 }

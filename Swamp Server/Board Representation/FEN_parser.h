@@ -141,7 +141,7 @@ bool fenStringValidator(char *FEN_STRING)
                 continue;
             }   
             while(FEN_STRING[i]!=' '){
-                if(!(FEN_STRING[i]>='1' || FEN_STRING[i] <='9')){
+                if(!(FEN_STRING[i]>='1' && FEN_STRING[i] <='9')){
                     return false;
                 }
                 i++;
@@ -171,5 +171,143 @@ bool fenStringValidator(char *FEN_STRING)
 }
 
 GameState initializeNewGameFromString(char *FEN_STRING)
-{
+{   
+    GameState _gameState;
+    _gameState._blackPawns = 0;
+    _gameState._whitePawns = 0;
+    _gameState._blackRooks = 0;
+    _gameState._blackKnights = 0;
+    _gameState._blackBishops = 0;
+    _gameState._blackKing = 0;
+    _gameState._blackQueens = 0;
+    _gameState._whiteRooks = 0;
+    _gameState._whiteKnights = 0;
+    _gameState._whiteBishops = 0;
+    _gameState._whiteQueens = 0;
+    _gameState._whiteKing = 0;
+
+
+    if(!fenStringValidator(FEN_STRING)){
+        return _gameState;
+    }
+    int _rankCounter = 8;
+    int _currPosition= 0;
+    int _i=0;
+
+    for(int i =_i; i < MAX_UCI_QUERY_LENGTH && FEN_STRING[i] != '\0' && FEN_STRING[i] != '\n' ; i++, _i++){
+        switch (FEN_STRING[i])
+        {
+        case '/':
+            _rankCounter--;
+            _currPosition=0;
+            break;
+        case ' ':
+            _i++;
+            i=MAX_UCI_QUERY_LENGTH;
+            break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+            _currPosition+=(FEN_STRING[i] -'0');
+            break;
+        case 'k':
+            SET_BIT_PIECE(_gameState._blackKing , _rankCounter , _currPosition);
+            break;
+        case 'K':
+            SET_BIT_PIECE(_gameState._whiteKing , _rankCounter , _currPosition);
+            break;
+        case 'q':
+            SET_BIT_PIECE(_gameState._blackQueens , _rankCounter , _currPosition);
+            break;
+        case 'Q':
+            SET_BIT_PIECE(_gameState._whiteQueens , _rankCounter ,_currPosition);
+            break;
+        case 'p':
+            SET_BIT_PIECE(_gameState._blackPawns , _rankCounter , _currPosition);
+            break;
+        case 'P':
+            SET_BIT_PIECE(_gameState._whitePawns , _rankCounter , _currPosition);
+            break;
+        case 'b':
+            SET_BIT_PIECE(_gameState._blackBishops, _rankCounter , _currPosition);
+            break;
+        case 'B':
+            SET_BIT_PIECE(_gameState._whiteBishops, _rankCounter , _currPosition);
+            break;        
+        case 'n':
+            SET_BIT_PIECE(_gameState._blackKnights, _rankCounter , _currPosition);
+            break;
+        case 'N':
+            SET_BIT_PIECE(_gameState._whiteKnights, _rankCounter , _currPosition);
+            break;
+        case 'r':
+            SET_BIT_PIECE(_gameState._blackRooks, _rankCounter , _currPosition);
+            break;
+        case 'R':
+            SET_BIT_PIECE(_gameState._whiteRooks, _rankCounter , _currPosition);
+            break;
+        }
+    }
+    
+    {
+        #define _newState _gameState
+
+        _newState._occupancy =
+            _newState._blackPawns ^ _newState._blackRooks ^
+            _newState._blackKnights ^ _newState._blackBishops ^ _newState._blackQueens ^
+            _newState._blackKing ^ _newState._whitePawns ^
+            _newState._whiteRooks ^ _newState._whiteKnights ^
+            _newState._whiteQueens ^ _newState._whiteKing ^
+            _newState._whiteBishops;
+
+        _newState._blackOccupancy =
+            _newState._blackPawns ^ _newState._blackRooks ^
+            _newState._blackKnights ^ _newState._blackBishops ^ _newState._blackQueens ^
+            _newState._blackKing;
+
+        _newState._whiteOccupancy = _newState._whitePawns ^
+                                    _newState._whiteRooks ^ _newState._whiteKnights ^
+                                    _newState._whiteQueens ^ _newState._whiteKing ^
+                                    _newState._whiteBishops; 
+
+        for (int i = 0; i < 12; i++)
+        {
+            for (int j = 0; j < 64; j++)
+            {
+                _newState._randomValues[i][j] = rand();
+            }
+        }
+
+        _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
+        _newState._stateIndex = 0;
+        _newState._totalState = 100;
+        _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
+
+        #undef _newState 
+    }
+
+    _gameState._pieceToMove =FEN_STRING[_i];
+    _i++;
+    _i++;
+
+    char string1[4]="KQkq";
+    int i =0;
+    while(i<4){
+        if(string1[i]== FEN_STRING[_i]){
+            _gameState._castlingAvailable[i]=FEN_STRING[_i];
+            i++;
+            _i++;
+        }else{
+            _gameState._castlingAvailable[i]=' ';
+            i++;
+            _i++;
+        }
+    }
+    
+    return _gameState;
 }
