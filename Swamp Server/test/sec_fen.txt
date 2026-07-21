@@ -1,5 +1,5 @@
 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
-8/8/8/8/8/8/kPK5/8 b KQkq e3 0 1 
+8/8/8/8/8/8/kPK5/8 b KQkq e3 0 1
 8/pppppppp/8/8/8/kPK5/PPPP2PP/8 b KQkq e3 0 1
 rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w
 2br2k1/1p2n1q1/p2p2p1/P1bP1pNp/1BP2PnP/1Q1B2P1/8/3NR2K w

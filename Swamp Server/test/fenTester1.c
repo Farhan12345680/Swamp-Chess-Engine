@@ -10,13 +10,19 @@ int main()
     char *str = (char *)malloc(sizeof(char) * MAX_UCI_QUERY_LENGTH);
     while (fgets(str, MAX_UCI_QUERY_LENGTH, fp) != NULL)
     {
+        str[strcspn(str, "\r")] = '\0';
         if (fenStringValidator(str))
         {
-            printf("FEN IS CORRECT\n");
+            GameState _g=initializeNewGameFromString(str);
+            char *returned = fenStringGenerationFromGameState(_g);
+
+            printf("CORRECT\nGIVEN -> %sReturned -> %s\n" , str,returned );
+            free(returned);
+
         }
         else
         {
-            printf("FEN IS WRONG\n");
+
         }
     }
 
