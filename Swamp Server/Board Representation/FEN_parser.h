@@ -1,3 +1,4 @@
+#pragma once
 #include "Common.h"
 #include "bitboards.h"
 
@@ -15,6 +16,9 @@ typedef enum
 
 bool fenStringValidator(char *FEN_STRING)
 {
+    if(FEN_STRING[0]=='\n' || FEN_STRING[0]=='\0'){
+        return false;
+    }
     FEN_STATE _state = PIECE_PLACEMENT;
 
     for (int i = 0; i < MAX_UCI_QUERY_LENGTH && FEN_STRING[i] != '\0' && FEN_STRING[i] !='\n' ; i++)
@@ -189,9 +193,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
     _gameState._whiteKing = 0;
 
 
-    if(!fenStringValidator(FEN_STRING)){
-        return _gameState;
-    }
+
     int _rankCounter = 8;
     int _currPosition= 0;
     int _i=0;
@@ -204,7 +206,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
             _currPosition=0;
             break;
         case ' ':
-            _i++;
+
             i=MAX_UCI_QUERY_LENGTH;
             break;
         case '1':
@@ -253,6 +255,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
         case 'R':
             SET_BIT_PIECE(_gameState._whiteRooks, _rankCounter , _currPosition);
             break;
+        
         }
     }
     
@@ -279,9 +282,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
 
 
-        _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
-        _newState._stateIndex = 0;
-        _newState._totalState = 100;
+
         _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
 
         #undef _newState 
@@ -310,12 +311,13 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
     _gameState._enpassantFile= FEN_STRING[_i];
     _i++;
-    
+    _i++;
+    _i++;
     _gameState._zobristHash = generateZorbistHashFromAGameState(_gameState);
     
     _gameState._numberHalfMoves=0;
 
-    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
+    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <='9'){
         _gameState._numberHalfMoves=_gameState._numberHalfMoves*10 +(FEN_STRING[_i++]-'0');
     }
 
@@ -323,11 +325,167 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
     _gameState._numberMoves=0;
 
-    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <=9){
-        _gameState._numberMoves=_gameState._numberHalfMoves*10 +(FEN_STRING[_i++]-'0');
+    while(FEN_STRING[_i] >= '0' && FEN_STRING[_i] <='9'){
+        _gameState._numberMoves=_gameState._numberMoves*10 +(FEN_STRING[_i++]-'0');
     }
 
 
     return _gameState;
 }
 
+char* fenStringGenerationFromGameState(GameState* GAME_STATE){
+    char* _retString = (char *)malloc(MAX_UCI_QUERY_LENGTH*sizeof(char));
+
+    
+    char _board[8][8];
+
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            _board[i][j] = '.';
+        }
+    }
+
+    // black pawns
+    characterPuter(_board, GAME_STATE->_blackPawns, 'p');
+    // black rooks
+    characterPuter(_board, GAME_STATE->_blackRooks, 'r');
+    // black bishops
+    characterPuter(_board, GAME_STATE->_blackBishops, 'b');
+    // black knights
+    characterPuter(_board, GAME_STATE->_blackKnights, 'n');
+    // black queens
+    characterPuter(_board, GAME_STATE->_blackQueens, 'q');
+    // black king
+    characterPuter(_board, GAME_STATE->_blackKing, 'k');
+
+    // white pawns
+    characterPuter(_board, GAME_STATE->_whitePawns, 'P');
+    // white rooks
+    characterPuter(_board, GAME_STATE->_whiteRooks, 'R');
+    // white bishops
+    characterPuter(_board, GAME_STATE->_whiteBishops, 'B');
+    // white knights
+    characterPuter(_board, GAME_STATE->_whiteKnights, 'N');
+    // white queens
+    characterPuter(_board, GAME_STATE->_whiteQueens, 'Q');
+    // white king
+    characterPuter(_board, GAME_STATE->_whiteKing, 'K');
+
+
+
+
+    int _index =0;
+    
+    
+    int _counter =0;
+    int _slashCounter = 0;
+    
+    for(int i =7;i>=0; i--){
+        for(int j=7;j>=0; j--){
+            if(_board[i][j] =='.'){
+                _counter+=1;
+            }else{
+                if(_counter!=0){
+                    _retString[_index++]=(char)( _counter+'0');
+
+                    _counter=0;
+                }
+                _retString[_index++]=_board[i][j];
+            }
+        }
+
+
+        if(_counter!=0){
+            _retString[_index++]=(char)( _counter+'0');
+            _counter=0;
+        }
+        _retString[_index++] = '/'; 
+    }
+
+    _retString[--_index] =' ';
+    _index++;
+    _retString[_index++]= GAME_STATE->_pieceToMove;
+    _retString[_index++]=' ';
+
+    for(int i=0;i< 4 ; i++){
+        switch (GAME_STATE->_castlingAvailable[i])
+        {
+        case 'K':
+        case 'Q':
+        case 'k':
+        case 'q':
+            _retString[_index++]=GAME_STATE->_castlingAvailable[i];
+        
+        default:
+            break;
+        }
+    }
+
+    _retString[_index++]=' ';
+
+    if(GAME_STATE->_enpassantFile!='-' && GAME_STATE->_pieceToMove=='w')
+    {
+        _retString[_index++]=GAME_STATE->_enpassantFile;
+        _retString[_index++]='6';
+    }
+    else if(GAME_STATE->_enpassantFile!='-' && GAME_STATE->_pieceToMove=='b'){
+        _retString[_index++]=GAME_STATE->_enpassantFile;
+        _retString[_index++]='3';
+    }else{
+        _retString[_index++]='-';
+    }
+    _retString[_index++]=' ';
+
+    //GAME_STATE half move
+    int i = _index;
+    _retString[_index]='0';
+    int _temp = GAME_STATE->_numberHalfMoves;
+    int _found=0;
+    while(_temp){
+        _retString[_index++]=(char)(_temp%10 + '0');
+        _temp/=10;
+        _found=1;
+    }
+
+    int _sec = _index-_found;
+    while(i <_sec){
+        char temp = _retString[_sec];
+        _retString[_sec]=_retString[i];
+        _retString[i]=temp;
+        _sec--;
+        i++;
+    }
+
+    _retString[++_index]=' ';
+    _index++;
+    i = _index;
+    _retString[_index]='1';
+
+    _temp = GAME_STATE->_numberMoves;
+    _found =0;
+
+    while(_temp){
+        
+        _retString[_index++]=(char)(_temp%10 + '0');
+        _temp/=10;
+        _found=1;
+    }
+
+    _sec = _index - _found;
+
+    while(i <_sec){
+        char temp = _retString[_sec];
+        _retString[_sec]=_retString[i];
+        _retString[i]=temp;
+        _sec--;
+        i++;
+    }
+
+    _retString[_index]='\0';
+
+
+
+    return _retString;
+}

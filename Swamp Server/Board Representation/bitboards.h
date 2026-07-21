@@ -1,4 +1,4 @@
-#pragma once;
+#pragma once
 #include "Common.h"
 
 
@@ -23,12 +23,6 @@ typedef struct
     __uint64_t _occupancy;
 
     __uint64_t _zobristHash;
-
-
-
-    __uint64_t *_prevStates;
-    int _stateIndex;
-    int _totalState;
     
     int  _numberHalfMoves;
     int _numberMoves;
@@ -195,9 +189,7 @@ GameState initiaizeNewGame()
                                 _newState._whiteBishops;
 
 
-    _newState._prevStates = (__uint64_t *)malloc(sizeof(__uint64_t) * 100);
-    _newState._stateIndex = 0;
-    _newState._totalState = 100;
+
     _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
     _newState._castlingAvailable= "KQkq";
     _newState._pieceToMove= 'w';
@@ -208,25 +200,7 @@ GameState initiaizeNewGame()
     return _newState;
 }
 
-void insertStateIntoGameState(GameState GAME_STATE, __uint64_t VALUE)
-{
-    if (GAME_STATE._stateIndex < GAME_STATE._totalState / 2)
-    {
-        GAME_STATE._prevStates[GAME_STATE._stateIndex] = VALUE;
-        GAME_STATE._stateIndex++;
 
-        return;
-    }
-    __uint64_t *new_array = (__uint64_t *)malloc(sizeof(__uint64_t) * 2 * GAME_STATE._totalState);
-
-    for (int i = 0; i <= GAME_STATE._stateIndex; i++)
-    {
-        new_array[i] = GAME_STATE._prevStates[i];
-    }
-
-    free(GAME_STATE._prevStates);
-    GAME_STATE._prevStates = new_array;
-}
 
 GameState characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARACTER)
 {
@@ -253,8 +227,9 @@ GameState characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARAC
     }
 }
 
-GameState printBoard(GameState GAME_STATE)
+GameState printBoard(GameState* GAME)
 {
+    GameState GAME_STATE =*GAME;
     char _board[8][8];
 
     for (int i = 0; i < 8; i++)
@@ -287,7 +262,7 @@ GameState printBoard(GameState GAME_STATE)
     // white knights
     characterPuter(_board, GAME_STATE._whiteKnights, 'N');
     // white queens
-    characterPuter(_board, GAME_STATE._whiteQueens, 'q');
+    characterPuter(_board, GAME_STATE._whiteQueens, 'Q');
     // white king
     characterPuter(_board, GAME_STATE._whiteKing, 'K');
 

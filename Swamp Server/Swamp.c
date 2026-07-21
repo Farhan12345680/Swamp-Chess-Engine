@@ -1,17 +1,16 @@
 #include "Board Representation/bitboards.h";
-
+#include "Board Representation/FEN_parser.h";
+#include "Board Representation/gameHistory.h";
 
 
 
 int main(){
     GameState _globalGame = initiaizeNewGame();
 
-    printBoard(_globalGame);
+    printf("%s\n" ,fenStringGenerationFromGameState(&_globalGame) );
 
-    for(int i =0;i<12; i++){
-        for(int j= 0;j<64; j++){
-                
-        }
-    }
+    
+
+    
 
 }
