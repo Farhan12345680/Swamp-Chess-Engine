@@ -2,11 +2,6 @@
 #include "Common.h"
 
 
-//function
-ZorbistKeys generateZorbistNumbers();
-__uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE);
-
-
 typedef struct
 {
     __uint64_t _blackPawns;
@@ -44,6 +39,24 @@ typedef struct
     char _enpassantFile ;
 
 } GameState;
+
+
+typedef struct
+{
+    __uint64_t _zorbistPieces[12][64];
+    __uint64_t _zorbistSideToMove;
+    __uint64_t _zorbistCastlingNums[4];
+    __uint64_t _zobistFileNums[8];
+    
+} ZorbistKeys ;
+
+
+//function
+ZorbistKeys generateZorbistNumbers();
+__uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE);
+
+
+
 
 typedef enum
 {
@@ -129,14 +142,6 @@ typedef enum
     BLACK_PAWN
 } Pieces;
 
-typedef struct
-{
-    __uint64_t _zorbistPieces[12][64];
-    __uint64_t _zorbistSideToMove;
-    __uint64_t _zorbistCastlingNums[4];
-    __uint64_t _zobistFileNums[8];
-    
-} ZorbistKeys ;
 
 static ZorbistKeys _globalZorbistHashing={};
 
@@ -328,7 +333,7 @@ __uint64_t generateXORforPiece(Pieces PIECE , __uint64_t PIECE_BIT_MAP){
     __uint64_t _curr=0 ;
 
     while(PIECE_BIT_MAP){
-        _curr^=_globalZorbistHashing._zorbistPieces[PIECE][(log2((PIECE_BIT_MAP ^ (PIECE_BIT_MAP & (PIECE_BIT_MAP-1)))))];
+        _curr^=_globalZorbistHashing._zorbistPieces[PIECE][__builtin_ctzll((PIECE_BIT_MAP ^ (PIECE_BIT_MAP & (PIECE_BIT_MAP-1))))];
         PIECE_BIT_MAP=PIECE_BIT_MAP & (PIECE_BIT_MAP-1);
 
     }

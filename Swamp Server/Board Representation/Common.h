@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #define MAX_UCI_QUERY_LENGTH 257
 
 #ifndef __uint64_t
