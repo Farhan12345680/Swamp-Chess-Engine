@@ -1,5 +1,7 @@
 #pragma once
+#include "../Board Representation/bitboards.h"
 #include <math.h>
+#include <stdbool.h>
 
 __uint64_t knightTable[64];
 __uint64_t rookMask[64];
@@ -491,7 +493,10 @@ static void generatePreCalculateWhitePawnMovement()
             {
                 continue;
             }
-
+            if (i == 2)
+            {
+                whitePawnMovementTable[_idx] |= (_curr << 16);
+            }
             if ((i + 1) < 9)
             {
                 whitePawnMovementTable[_idx] |= (_curr << 8);
@@ -517,11 +522,11 @@ static void generatePreCalculateBlackPawnAttck()
 
             if ((i - 1) > 0 && (j - 1) > 0)
             {
-                blackPawnTable[_idx] |= (_curr << 9);
+                blackPawnTable[_idx] |= (_curr >> 9);
             }
             if ((i - 1) > 0 && (j + 1) < 9)
             {
-                blackPawnTable[_idx] |= (_curr << 7);
+                blackPawnTable[_idx] |= (_curr >> 7);
             }
         }
     }
@@ -541,7 +546,10 @@ static void generatePreCalculateBlackPawnMovement()
             {
                 continue;
             }
-
+            if (i == 7)
+            {
+                blackPawnMovementTable[_idx] |= (_curr >> 16);
+            }
             if ((i - 1) > 0)
             {
                 blackPawnMovementTable[_idx] |= (_curr >> 8);
@@ -614,4 +622,72 @@ void initializer()
     generatePreCalculateWhitePawnMovement();
     generatePreCalculateBlackPawnAttck();
     generatePreCalculatedKingAttack();
+}
+
+inline __uint64_t getBishopAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+{
+    __uint64_t _idx = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
+    return bishopAttacks[square][_idx] & (~sameSideOccupancy);
+}
+
+inline __uint64_t getRookAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+{
+    __uint64_t _idx = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
+    return rookAttacks[square][_idx] & (~sameSideOccupancy);
+}
+
+inline __uint64_t getQueenAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+{
+    return getBishopAttack(square, occupancy, sameSideOccupancy) | getRookAttack(square, occupancy, sameSideOccupancy);
+}
+
+inline __uint64_t getKnightAttack(Square square, __uint64_t sameSideOccupancy)
+{
+    return knightTable[square] & ~(sameSideOccupancy);
+}
+
+inline __uint64_t getWhitePawnAttack(Square square, __uint64_t otherSideOccupancy)
+{
+    return whitePawnTable[square] & otherSideOccupancy;
+}
+
+inline __uint64_t getWhitePawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+{
+
+    if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
+        return 0;
+    }
+    if((1ULL << (square+16)) & (otherSideOccupancy|ownSideOccupancy) )
+    {
+        return (1ULL << (square+8));
+    }
+    return ((whitePawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
+}
+
+inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+{
+    if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
+        return 0;
+    }
+    if((1ULL << (square+16)) & (otherSideOccupancy|ownSideOccupancy) )
+    {
+        return (1ULL << (square+8));
+    }
+    return ((blackPawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
+}
+
+inline __uint64_t getBlackPawnAttack(Square square, __uint64_t otherSideOccupancy)
+{
+
+    return blackPawnTable[square] & otherSideOccupancy;
+}
+
+inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
+{
+    return (bool)((1ULL << square) & attackTable);
+}
+
+inline __uint64_t getKingAttackAndMovement(Square square, __uint64_t sameSideOccupancy, __uint64_t otherSideAttackTable)
+{
+    return ((kingTable[square] & ~sameSideOccupancy) & ~otherSideAttackTable);
 }
