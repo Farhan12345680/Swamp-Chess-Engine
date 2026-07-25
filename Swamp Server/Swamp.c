@@ -1,8 +1,11 @@
-#include "Board Representation/bitboards.h";
-#include "Board Representation/FEN_parser.h";
-#include "Board Representation/gameHistory.h";
+#include "./Board Representation/BoardRepresentation.h";
+#include <stdio.h>;
 
+int main()
+{
+    // DO initialization
 
+    // Server Reading
 
 int main(){
     GameState _globalGame = initiaizeNewGame();
@@ -13,4 +16,13 @@ int main(){
 
     
 
+        if (strcmp(_str, "uci") == 0)
+        {
+        }
+        else
+        {
+            free(_str);
+            break;
+        }
+    }
 }
