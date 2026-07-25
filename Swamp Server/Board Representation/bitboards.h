@@ -2,6 +2,9 @@
 #include "Common.h"
 
 
+
+
+
 typedef struct
 {
     __uint64_t _blackPawns;
@@ -23,11 +26,13 @@ typedef struct
     __uint64_t _occupancy;
 
     __uint64_t _zobristHash;
-    
+    double _evalValue;
+
+
     int  _numberHalfMoves;
     int _numberMoves;
 
-    char* _castlingAvailable;
+    uint8_t _castlingAvailable;
     char _pieceToMove;
 
     char _enpassantFile ;
@@ -44,11 +49,13 @@ typedef struct
     
 } ZorbistKeys ;
 
+extern Pieces _chessBoard[8][8];
+extern ZorbistKeys _globalZorbistHashing;
+
 
 //function
 ZorbistKeys generateZorbistNumbers();
 __uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE);
-
 
 
 
@@ -133,11 +140,10 @@ typedef enum
     BLACK_BISHOP,
     BLACK_KNIGHT,
     BLACK_ROOK,
-    BLACK_PAWN
+    BLACK_PAWN,
+    ES
 } Pieces;
 
-
-static ZorbistKeys _globalZorbistHashing={};
 
 
 // PRNG (Pseudo Random Number Generator)
@@ -157,6 +163,8 @@ GameState initiaizeNewGame()
 
     _globalZorbistHashing = generateZorbistNumbers(); 
     GameState _newState;
+    _newState._evalValue=0.0;
+
     _newState._blackPawns = 0b0000000011111111000000000000000000000000000000000000000000000000;
     _newState._whitePawns = 0b0000000000000000000000000000000000000000000000001111111100000000;
     _newState._blackRooks = 0b1000000100000000000000000000000000000000000000000000000000000000;
@@ -169,6 +177,8 @@ GameState initiaizeNewGame()
     _newState._whiteBishops = 0b0000000000000000000000000000000000000000000000000000000000100100;
     _newState._whiteQueens = 0b0000000000000000000000000000000000000000000000000000000000010000;
     _newState._whiteKing = 0b0000000000000000000000000000000000000000000000000000000000001000;
+    _newState._evalValue=0;
+
 
     _newState._occupancy =
         _newState._blackPawns ^ _newState._blackRooks ^
@@ -190,8 +200,8 @@ GameState initiaizeNewGame()
 
 
 
-    _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
-    _newState._castlingAvailable= "KQkq";
+    _newState._castlingAvailable = 0;
+    _newState._castlingAvailable= 0b00001111;
     _newState._pieceToMove= 'w';
     _newState._zobristHash = generateZorbistHashFromAGameState(_newState);
     _newState._enpassantFile= '-';
@@ -201,8 +211,7 @@ GameState initiaizeNewGame()
 }
 
 
-
-GameState characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARACTER)
+void characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARACTER)
 {
     int _counter = 0;
     __uint64_t _temp = PIECE_NUMBER;
@@ -227,55 +236,21 @@ GameState characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARAC
     }
 }
 
-GameState printBoard(GameState* GAME)
-{
-    GameState GAME_STATE =*GAME;
-    char _board[8][8];
+void piecePuter(Pieces _board[64] , __uint64_t PIECE_NUMBER , Pieces piece){
+    int _counter = 0;
+    __uint64_t _temp = PIECE_NUMBER;
 
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
+
+    for(int i=0;i<64; i++){
+        if(_temp & 1)
         {
-            _board[i][j] = '.';
+            _board[i]=piece;
         }
+
+        _temp >>= 1;
     }
-
-    // black pawns
-    characterPuter(_board, GAME_STATE._blackPawns, 'p');
-    // black rooks
-    characterPuter(_board, GAME_STATE._blackRooks, 'r');
-    // black bishops
-    characterPuter(_board, GAME_STATE._blackBishops, 'b');
-    // black knights
-    characterPuter(_board, GAME_STATE._blackKnights, 'n');
-    // black queens
-    characterPuter(_board, GAME_STATE._blackQueens, 'q');
-    // black king
-    characterPuter(_board, GAME_STATE._blackKing, 'k');
-
-    // white pawns
-    characterPuter(_board, GAME_STATE._whitePawns, 'P');
-    // white rooks
-    characterPuter(_board, GAME_STATE._whiteRooks, 'R');
-    // white bishops
-    characterPuter(_board, GAME_STATE._whiteBishops, 'B');
-    // white knights
-    characterPuter(_board, GAME_STATE._whiteKnights, 'N');
-    // white queens
-    characterPuter(_board, GAME_STATE._whiteQueens, 'Q');
-    // white king
-    characterPuter(_board, GAME_STATE._whiteKing, 'K');
-
-    for (int i = 7; i >= 0; i--)
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            printf("%c ", _board[i][j]);
-        }
-        printf("\n");
-    }
+    
 }
-
 
 
 // Zorbist Hashing implementation
@@ -335,19 +310,19 @@ __uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE){
                 generateXORforPiece(WHITE_PAWN , GAME_STATE._whitePawns) ;
 
 
-    if(GAME_STATE._castlingAvailable[0]=='K')
+    if(! (GAME_STATE._castlingAvailable & 0b00001000))
     {
         _curr^=_globalZorbistHashing._zorbistCastlingNums[0];
     }
-    if(GAME_STATE._castlingAvailable[1]=='Q')
+    if(!(GAME_STATE._castlingAvailable & 0b00000100))
     {
         _curr^=_globalZorbistHashing._zorbistCastlingNums[1];
     }
-    if(GAME_STATE._castlingAvailable[2]=='k')
+    if(!(GAME_STATE._castlingAvailable & 0b00000010))
     {
         _curr^=_globalZorbistHashing._zorbistCastlingNums[2];
     }
-    if(GAME_STATE._castlingAvailable[3]=='q')
+    if(!(GAME_STATE._castlingAvailable & 0b00000001))
     {
         _curr^=_globalZorbistHashing._zorbistCastlingNums[3];
     }

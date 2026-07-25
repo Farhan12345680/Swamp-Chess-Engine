@@ -676,10 +676,10 @@ inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupa
     return ((blackPawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
 }
 
-inline __uint64_t getBlackPawnAttack(Square square, __uint64_t otherSideOccupancy)
+inline __uint64_t getBlackPawnAttack(Square square, __uint64_t otherSideOccupancy , __uint64_t sameSideOccupancy)
 {
 
-    return blackPawnTable[square] & otherSideOccupancy;
+    return (blackPawnTable[square] & ~sameSideOccupancy) & otherSideOccupancy;
 }
 
 inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
@@ -690,4 +690,49 @@ inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
 inline __uint64_t getKingAttackAndMovement(Square square, __uint64_t sameSideOccupancy, __uint64_t otherSideAttackTable)
 {
     return ((kingTable[square] & ~sameSideOccupancy) & ~otherSideAttackTable);
+}
+
+
+// --------------------------------------
+// **************************************
+// ************** PSEUDO LEGAL **********
+// **************************************
+// --------------------------------------
+
+
+inline __uint64_t getBishopAttackPseudo(Square square, __uint64_t occupancy )
+{
+    __uint64_t _idx = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
+    return bishopAttacks[square][_idx] ;
+}
+
+inline __uint64_t getRookAttackPseudo(Square square, __uint64_t occupancy)
+{
+    __uint64_t _idx = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
+    return rookAttacks[square][_idx] ;
+}
+
+inline __uint64_t getQueenAttackPseudo(Square square, __uint64_t occupancy)
+{
+    return getBishopAttackPseudo(square, occupancy) | getRookAttackPseudo(square, occupancy);
+}
+
+inline __uint64_t getKnightAttackPseudo(Square square)
+{
+    return knightTable[square];
+}
+
+inline __uint64_t getWhitePawnAttackPseudo(Square square)
+{
+    return whitePawnTable[square];
+}
+
+inline __uint64_t getBlackPawnAttackPseudo(Square square)
+{
+    return (blackPawnTable[square] );
+}
+
+inline __uint64_t getKingAttackAndMovementPseudo(Square square)
+{
+    return kingTable[square];
 }

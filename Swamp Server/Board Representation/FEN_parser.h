@@ -179,6 +179,8 @@ GameState initializeNewGameFromString(char *FEN_STRING)
     _globalZorbistHashing= generateZorbistNumbers();
 
     GameState _gameState;
+
+    _gameState._evalValue=0.0;
     _gameState._blackPawns = 0;
     _gameState._whitePawns = 0;
     _gameState._blackRooks = 0;
@@ -283,7 +285,7 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
 
 
-        _newState._castlingAvailable = (char*)malloc(sizeof(char) * 4 );
+        _newState._castlingAvailable = 0;
 
         #undef _newState 
     }
@@ -299,13 +301,11 @@ GameState initializeNewGameFromString(char *FEN_STRING)
 
     while(i<4){
         if(string1[i]== FEN_STRING[_i]){
-            _gameState._castlingAvailable[i]=FEN_STRING[_i];
-            i++;
+            _gameState._castlingAvailable |= 1<<(3-i);
+            
             _i++;
-        }else{
-            _gameState._castlingAvailable[i]=' ';
-            i++;
         }
+            i++;
     }
     _i++;
 
@@ -409,20 +409,22 @@ char* fenStringGenerationFromGameState(GameState* GAME_STATE){
     _retString[_index++]= GAME_STATE->_pieceToMove;
     _retString[_index++]=' ';
 
-    for(int i=0;i< 4 ; i++){
-        switch (GAME_STATE->_castlingAvailable[i])
-        {
-        case 'K':
-        case 'Q':
-        case 'k':
-        case 'q':
-            _retString[_index++]=GAME_STATE->_castlingAvailable[i];
-        
-        default:
-            break;
-        }
+    if(GAME_STATE->_castlingAvailable & 0b00001000){
+        _retString[_index++]='K';
+    }
+    if(GAME_STATE->_castlingAvailable & 0b00000100){
+        _retString[_index++]='Q';
+    }
+    if(GAME_STATE->_castlingAvailable & 0b00000010)
+    {
+        _retString[_index++]='k';
+    }
+    if(GAME_STATE->_castlingAvailable & 0b00000001)
+    {
+        _retString[_index++]='q';
     }
 
+ 
     _retString[_index++]=' ';
 
     if(GAME_STATE->_enpassantFile!='-' && GAME_STATE->_pieceToMove=='w')

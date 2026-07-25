@@ -6,9 +6,9 @@
 
 int main(){
     GameState _globalGame = initiaizeNewGame();
-
-    printf("%s\n" ,fenStringGenerationFromGameState(&_globalGame) );
-
+    char * str = fenStringGenerationFromGameState(&_globalGame);
+    printf("%s\n" ,str );
+    free(str);
     
 
     
