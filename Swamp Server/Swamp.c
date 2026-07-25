@@ -20,6 +20,8 @@ int main()
         }
         else
         {
+            free(_str);
+            break;
         }
     }
 }
