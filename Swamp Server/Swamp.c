@@ -1,10 +1,25 @@
-#include "Board Representation/bitboards.h";
-#include "Board Representation/FEN_parser.h";
-#include "Board Representation/gameHistory.h";
+#include "../Board Representation/BoardRepresentation.h";
+#include <stdio.h>;
 
 int main()
 {
-    GameState _globalGame = initiaizeNewGame();
+    // DO initialization
 
-    printf("%s\n", fenStringGenerationFromGameState(&_globalGame));
+    // Server Reading
+
+    while (1)
+    {
+        char *_str = (char *)malloc(sizeof(char) * 200);
+
+        scanf("%s", _str);
+
+        _str[strcspn(_str, "\r\n")] = '\0';
+
+        if (strcmp(_str, "uci") == 0)
+        {
+        }
+        else
+        {
+        }
+    }
 }
