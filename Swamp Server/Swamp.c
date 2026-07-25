@@ -2,15 +2,9 @@
 #include "Board Representation/FEN_parser.h";
 #include "Board Representation/gameHistory.h";
 
-
-
-int main(){
+int main()
+{
     GameState _globalGame = initiaizeNewGame();
 
-    printf("%s\n" ,fenStringGenerationFromGameState(&_globalGame) );
-
-    
-
-    
-
+    printf("%s\n", fenStringGenerationFromGameState(&_globalGame));
 }
