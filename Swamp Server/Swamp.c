@@ -1,8 +1,7 @@
 #include "./Board Representation/BoardRepresentation.h";
 #include <stdio.h>;
 
-int main()
-{
+
     // DO initialization
 
     // Server Reading
@@ -25,4 +24,3 @@ int main(){
             break;
         }
     }
-}
