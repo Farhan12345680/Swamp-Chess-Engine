@@ -1,10 +1,6 @@
 #pragma once
 #include "Common.h"
 
-
-
-
-
 typedef struct
 {
     __uint64_t _blackPawns;
@@ -44,7 +40,7 @@ typedef struct
 {
     __uint64_t _zorbistPieces[12][64];
     __uint64_t _zorbistSideToMove;
-    __uint64_t _zorbistCastlingNums[4];
+    __uint64_t _zorbistCastlingNums[16];
     __uint64_t _zobistFileNums[8];
     
 } ZorbistKeys ;
@@ -267,7 +263,7 @@ ZorbistKeys generateZorbistNumbers(){
 
     _curr._zorbistSideToMove=pseudoRandomNumberGenerator(&seed);
     
-    for(int i=0;i<4; i++){
+    for(int i=0;i<16; i++){
         _curr._zorbistCastlingNums[i]=pseudoRandomNumberGenerator(&seed);
     }
     
@@ -309,23 +305,8 @@ __uint64_t generateZorbistHashFromAGameState(GameState GAME_STATE){
                 generateXORforPiece(BLACK_PAWN, GAME_STATE._blackPawns) ^
                 generateXORforPiece(WHITE_PAWN , GAME_STATE._whitePawns) ;
 
+    _curr^=_globalZorbistHashing._zorbistCastlingNums[GAME_STATE._castlingAvailable & 0b00001111];
 
-    if(! (GAME_STATE._castlingAvailable & 0b00001000))
-    {
-        _curr^=_globalZorbistHashing._zorbistCastlingNums[0];
-    }
-    if(!(GAME_STATE._castlingAvailable & 0b00000100))
-    {
-        _curr^=_globalZorbistHashing._zorbistCastlingNums[1];
-    }
-    if(!(GAME_STATE._castlingAvailable & 0b00000010))
-    {
-        _curr^=_globalZorbistHashing._zorbistCastlingNums[2];
-    }
-    if(!(GAME_STATE._castlingAvailable & 0b00000001))
-    {
-        _curr^=_globalZorbistHashing._zorbistCastlingNums[3];
-    }
 
     if(GAME_STATE._enpassantFile != '-')
     {

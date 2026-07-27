@@ -5,658 +5,273 @@
 
 extern Pieces _chessBoard[64];
 
+typedef struct{
+    Square _src ;
+    Square _dest;
+    Pieces _destPiece;
+    Pieces _srcPiece;
+    uint8_t _prevCastlingState;
+    uint8_t _promotion;
+    uint8_t _preHalfMove;
+    uint8_t _preFullMove;
+    char _preEnpassantFile;
+    char _side;
+} Move;
 
-void _doMove(Square _src , Square _dest , int CASTLING_STATE){
+Move _doMove(Pieces _chessBoard[64], GameState* _state, Square _src , Square _dest  , int _promotion){
+    Move move;
+    move._promotion=_promotion;
+    move._dest=_dest;
+    move._src=_src;
+    move._destPiece=_chessBoard[_dest];
+    move._srcPiece=_chessBoard[_src];
+    move._prevCastlingState= _state->_castlingAvailable;
+    move._side= _state -> _pieceToMove;
+    move._preHalfMove=_state->_numberHalfMoves;
+    move._preFullMove=_state->_numberMoves;
+    move._preEnpassantFile=_state->_enpassantFile;
+    
+
+    __uint64_t mask = 1ULL<<_dest;
+    __uint64_t _srcMask = 1ULL << _src;
+    __uint64_t _gMask= mask | _srcMask;
 
     switch(_chessBoard[_src]){
         case WHITE_KING:
-            __uint64_t mask = 1ULL<<_dest;
-            _gloabl_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state->_whiteOccupancy ^= _srcMask | mask;
+            _state-> _occupancy ^= _srcMask ;
+            _state-> _occupancy |= mask;
+            _state->_whiteKing = mask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
+            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[_state->_castlingAvailable];
+            _state->_castlingAvailable= _state->_castlingAvailable & 0b00000011;
+            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[_state->_castlingAvailable];
 
             break;
-
         case WHITE_BISHOP:
-            __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _whiteOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_whiteBishops ^= _gMask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case WHITE_PAWN:
-            __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _whiteOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_whitePawns ^=_gMask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case WHITE_KNIGHT:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _whiteOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_whiteKnights ^=_gMask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case WHITE_QUEEN:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _whiteOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_whiteQueens ^=_gMask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
+
         case WHITE_ROOK:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _whiteOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_whiteRooks ^=_gMask;
+            _state->_pieceToMove= 'b';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
+
         case BLACK_BISHOP:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _blackOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackBishops ^=_gMask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case BLACK_KING:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state->_blackOccupancy ^= _gMask;
+            _state-> _occupancy ^= _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackKing = mask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
+            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[_state->_castlingAvailable];
+            _state->_castlingAvailable= _state->_castlingAvailable & 0b00001100;
+            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[_state->_castlingAvailable];
             
             break;
+
         case BLACK_KNIGHT:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _blackOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackKnights ^=_gMask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case BLACK_PAWN:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _blackOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackPawns ^=_gMask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         case BLACK_QUEEN:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _blackOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackQueens ^=_gMask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
+
         case BLACK_ROOK:
-                        __uint64_t mask = 1ULL<<_dest;
-            _state->_whiteOccupancy ^= _state->_whiteKing | mask;
-            _state-> _occupancy ^= _state->_whiteKing | mask;
+            _state-> _blackOccupancy ^= _gMask;
+            _state-> _occupancy ^=  _srcMask;
+            _state-> _occupancy |= mask;
+            _state->_blackRooks ^=_gMask;
+            _state->_pieceToMove= 'w';
 
-            _state->_whiteKing ^= (1ULL << _src)| mask;
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_dest];
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][_src];
-
-            _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
-
-
-            switch(_capturedPiece){
-                case BLACK_BISHOP:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackBishops ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_BISHOP][_dest];
-                    break;
-                case BLACK_KNIGHT:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackKnights ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_KNIGHT][_dest];
-                    break;
-                case BLACK_PAWN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackPawns ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_PAWN][_dest];
-                    break;
-                case BLACK_ROOK:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackRooks ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][_dest];
-
-                    break;
-                case BLACK_QUEEN:
-                    _state->_blackOccupancy ^= mask;
-                    _state->_blackQueens ^= mask;
-                    _state->_numberHalfMoves=0;
-                    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[BLACK_QUEEN][_dest];
-                    break;
-                default:
-                    break;
-            }
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[CASTLING_STATE];
-            _state->_castlingAvailable=0;
-            _state->_zobristHash ^=_globalZorbistHashing._zorbistCastlingNums[0];
-            _state->_numberMoves++;
-            
             break;
         default:
             break;
     }
+    
+                
+    switch(_chessBoard[_dest]){
+        case ES:
+            _state->_numberHalfMoves+=1;
+            if(_chessBoard[_src] == WHITE_PAWN || _chessBoard[_src]== BLACK_PAWN){
+                _state->_numberHalfMoves=0;
+            }
+            break;
+        default:
+            _state->_numberHalfMoves=0;
+            _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_dest]][_dest];
 
+            switch (_chessBoard[_dest])
+            {
+                case BLACK_BISHOP:
+                    _state->_blackOccupancy ^= mask;
+                    _state->_blackBishops ^= mask;
+                    break;
+                case BLACK_KNIGHT:
+                    _state->_blackOccupancy ^= mask;
+                    _state->_blackKnights ^= mask;
+                    break;
+                case BLACK_PAWN:
+                    _state->_blackOccupancy ^= mask;
+                    _state->_blackPawns ^= mask;
+                    break;
+                case BLACK_ROOK:
+                    _state->_blackOccupancy ^= mask;
+                    _state->_blackRooks ^= mask;
+                    break;
+                case BLACK_QUEEN:
+                    _state->_blackOccupancy ^= mask;
+                    _state->_blackQueens ^= mask;
+                    break;
+                case WHITE_BISHOP:
+                    _state-> _whiteOccupancy ^= mask;
+                    _state->_whiteBishops ^= mask;
+                    break;
+                case WHITE_KNIGHT:
+                    _state-> _whiteOccupancy ^= mask;
+                    _state->_whiteKnights ^= mask;
+                    break;
+                case WHITE_PAWN:
+                    _state-> _whiteOccupancy ^= mask;
+                    _state->_whitePawns ^= mask;
+                    break;
+                case WHITE_ROOK:
+                    _state-> _whiteOccupancy ^= mask;
+                    _state->_whiteRooks ^= mask;
+                    break;
+                case WHITE_QUEEN:
+                    _state-> _whiteOccupancy ^= mask;
+                    _state->_whiteQueens ^= mask;
+                    break;
+                default:
+                    break;
+            }
+
+    }
+    
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove ;
+    _state->_numberMoves++;
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_src]][_dest];
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_src]][_src];
+
+    _chessBoard[_dest]= _chessBoard[_src];
+    _chessBoard[_src]=ES;
+
+
+    if(_promotion && move._side=='b')
+    {
+        _state->_blackPawns ^=mask;
+        switch (_promotion)
+        {
+        case 1:
+            _chessBoard[_dest]=BLACK_QUEEN;
+            break;
+        case 2:
+            _chessBoard[_dest]=BLACK_ROOK;
+            break;
+        case 3:
+            _chessBoard[_dest]=BLACK_BISHOP;
+            break;
+        case 4:
+            _chessBoard[_dest]=BLACK_KNIGHT;
+
+            break;
+        default:
+            break;
+        }
+    }
+    else if(_promotion && move._side=='w')
+    {
+        _state->_whitePawns ^=mask;
+
+        switch (_promotion)
+        {
+        case 1:
+            _chessBoard[_dest]=WHITE_QUEEN;
+            break;
+        case 2:
+            _chessBoard[_dest]=WHITE_ROOK;
+            break;
+        case 3:
+            _chessBoard[_dest]=WHITE_BISHOP;
+            break;
+        case 4:
+            _chessBoard[_dest]=WHITE_KNIGHT;
+            break;
+        default:
+            break;
+        }
+    }
+    
+    
+    
+    return move;
 }
 
 
+void _undoMove(Pieces _chessBoard[64],Move* move){
 
-void _undoMove(GameState* _state , Square _src , Square _dest , Pieces PIECE){
-
-    switch(PIECE){
+    switch(_chessBoard[move->_src]){
         case WHITE_KING:
             break;
         case WHITE_BISHOP:
