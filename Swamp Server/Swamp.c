@@ -1,4 +1,7 @@
 #include "./Board Representation/BoardRepresentation.h";
+#include "./Move Generation/MoveGeneration.h";
+#include "./Move Generation/PieceMovement.h";
+#include <string.h>;
 #include <stdio.h>;
 
 
@@ -8,9 +11,9 @@
 
 int main(){
     GameState _globalGame = initiaizeNewGame();
-    char * str = fenStringGenerationFromGameState(&_globalGame);
-    printf("%s\n" ,str );
-    free(str);
+    char * _str = fenStringGenerationFromGameState(&_globalGame);
+    printf("%s\n" ,_str );
+    free(_str);
     
 
     
@@ -21,6 +24,5 @@ int main(){
         else
         {
             free(_str);
-            break;
         }
     }

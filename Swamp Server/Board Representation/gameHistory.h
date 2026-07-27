@@ -5,12 +5,12 @@
 
 #define nullptr NULL
 
-typedef struct GameHistoryNode
+typedef struct
 {
     GameState _state;
 
-    GameHistoryNode *_prev;
-    GameHistoryNode *_next;
+    struct GameHistoryNode *_prev;
+    struct GameHistoryNode *_next;
 
 } GameHistoryNode;
 

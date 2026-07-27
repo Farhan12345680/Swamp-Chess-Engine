@@ -1,5 +1,5 @@
 #pragma once
-#include "../Board Representation/bitboards.h"
+#include "../Board Representation/BoardRepresentation.h"
 #include <math.h>
 #include <stdbool.h>
 
@@ -611,7 +611,7 @@ static void generatePreCalculatedKingAttack()
 // ----------------------------------------------------------
 /////////////////////////////////////////////////////////////
 
-void initializer()
+void pieceInitializer()
 {
     generateRookMask();
     generateBishopMask();
