@@ -624,34 +624,34 @@ void pieceInitializer()
     generatePreCalculatedKingAttack();
 }
 
-inline __uint64_t getBishopAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+static inline __uint64_t getBishopAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
 {
     __uint64_t _idx = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
     return bishopAttacks[square][_idx] & (~sameSideOccupancy);
 }
 
-inline __uint64_t getRookAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+static inline __uint64_t getRookAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
 {
     __uint64_t _idx = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
     return rookAttacks[square][_idx] & (~sameSideOccupancy);
 }
 
-inline __uint64_t getQueenAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
+static inline __uint64_t getQueenAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
 {
     return getBishopAttack(square, occupancy, sameSideOccupancy) | getRookAttack(square, occupancy, sameSideOccupancy);
 }
 
-inline __uint64_t getKnightAttack(Square square, __uint64_t sameSideOccupancy)
+static inline __uint64_t getKnightAttack(Square square, __uint64_t sameSideOccupancy)
 {
     return knightTable[square] & ~(sameSideOccupancy);
 }
 
-inline __uint64_t getWhitePawnAttack(Square square, __uint64_t otherSideOccupancy)
+static inline __uint64_t getWhitePawnAttack(Square square, __uint64_t otherSideOccupancy)
 {
     return whitePawnTable[square] & otherSideOccupancy;
 }
 
-inline __uint64_t getWhitePawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+static inline __uint64_t getWhitePawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
 {
 
     if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
@@ -664,7 +664,7 @@ inline __uint64_t getWhitePawnMovement(Square square, __uint64_t otherSideOccupa
     return ((whitePawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
 }
 
-inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+static inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
 {
     if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
         return 0;
@@ -676,18 +676,18 @@ inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupa
     return ((blackPawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
 }
 
-inline __uint64_t getBlackPawnAttack(Square square, __uint64_t otherSideOccupancy , __uint64_t sameSideOccupancy)
+static inline __uint64_t getBlackPawnAttack(Square square, __uint64_t otherSideOccupancy , __uint64_t sameSideOccupancy)
 {
 
     return (blackPawnTable[square] & ~sameSideOccupancy) & otherSideOccupancy;
 }
 
-inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
+static inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
 {
     return (bool)((1ULL << square) & attackTable);
 }
 
-inline __uint64_t getKingAttackAndMovement(Square square, __uint64_t sameSideOccupancy, __uint64_t otherSideAttackTable)
+static inline __uint64_t getKingAttackAndMovement(Square square, __uint64_t sameSideOccupancy, __uint64_t otherSideAttackTable)
 {
     return ((kingTable[square] & ~sameSideOccupancy) & ~otherSideAttackTable);
 }
@@ -700,39 +700,39 @@ inline __uint64_t getKingAttackAndMovement(Square square, __uint64_t sameSideOcc
 // --------------------------------------
 
 
-inline __uint64_t getBishopAttackPseudo(Square square, __uint64_t occupancy )
+static inline __uint64_t getBishopAttackPseudo(Square square, __uint64_t occupancy )
 {
     __uint64_t _idx = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
     return bishopAttacks[square][_idx] ;
 }
 
-inline __uint64_t getRookAttackPseudo(Square square, __uint64_t occupancy)
+static inline __uint64_t getRookAttackPseudo(Square square, __uint64_t occupancy)
 {
     __uint64_t _idx = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
     return rookAttacks[square][_idx] ;
 }
 
-inline __uint64_t getQueenAttackPseudo(Square square, __uint64_t occupancy)
+static inline __uint64_t getQueenAttackPseudo(Square square, __uint64_t occupancy)
 {
     return getBishopAttackPseudo(square, occupancy) | getRookAttackPseudo(square, occupancy);
 }
 
-inline __uint64_t getKnightAttackPseudo(Square square)
+static inline __uint64_t getKnightAttackPseudo(Square square)
 {
     return knightTable[square];
 }
 
-inline __uint64_t getWhitePawnAttackPseudo(Square square)
+static inline __uint64_t getWhitePawnAttackPseudo(Square square)
 {
     return whitePawnTable[square];
 }
 
-inline __uint64_t getBlackPawnAttackPseudo(Square square)
+static inline __uint64_t getBlackPawnAttackPseudo(Square square)
 {
     return (blackPawnTable[square] );
 }
 
-inline __uint64_t getKingAttackAndMovementPseudo(Square square)
+static inline __uint64_t getKingAttackAndMovementPseudo(Square square)
 {
     return kingTable[square];
 }

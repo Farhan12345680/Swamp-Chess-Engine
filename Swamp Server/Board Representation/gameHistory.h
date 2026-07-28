@@ -1,7 +1,7 @@
 #pragma once
-#include "Common.h";
-#include "bitboards.h";
-#include "FEN_parser.h";
+#include "Common.h"
+#include "bitboards.h"
+#include "FEN_parser.h"
 
 #define nullptr NULL
 

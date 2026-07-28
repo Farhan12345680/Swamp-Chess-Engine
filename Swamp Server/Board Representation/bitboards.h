@@ -149,6 +149,11 @@ GameState initiaizeNewGame()
     _newState._enpassantFile= '-';
     _newState._numberMoves=1;
     _newState._numberHalfMoves=0;
+
+
+
+    
+
     return _newState;
 }
 
@@ -179,17 +184,16 @@ void characterPuter(char _board[8][8], __uint64_t PIECE_NUMBER, char CHARACTER)
 }
 
 void piecePuter(Pieces _board[64] , __uint64_t PIECE_NUMBER , Pieces piece){
-    int _counter = 0;
+
     __uint64_t _temp = PIECE_NUMBER;
 
 
     for(int i=0;i<64; i++){
-        if(_temp & 1)
+        if(PIECE_NUMBER & (1ULL<<i))
         {
             _board[i]=piece;
         }
 
-        _temp >>= 1;
     }
     
 }

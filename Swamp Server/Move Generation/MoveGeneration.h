@@ -571,9 +571,9 @@ void undoMove(Pieces _chessBoard[64], Move *move, GameState *_state)
     }
 }
 
-Square findEnpassantSquare(GameState *STATE, Square *PAWN_SQUARE, Pieces CHESS_BOARD[64])
+Square findEnpassantSquare(GameState *STATE, Square PAWN_SQUARE, Pieces CHESS_BOARD[64])
 {
-    if (CHESS_BOARD[*PAWN_SQUARE] !=
+    if (CHESS_BOARD[PAWN_SQUARE] !=
         ((STATE->_pieceToMove == 'b') ? BLACK_PAWN : WHITE_PAWN))
     {
         return 100;
@@ -583,26 +583,26 @@ Square findEnpassantSquare(GameState *STATE, Square *PAWN_SQUARE, Pieces CHESS_B
     {
     case 'b':
 
-        if ((*(PAWN_SQUARE) % 8) != 0 && (STATE->_enpassantFile) - 9 == *(PAWN_SQUARE))
+        if (((PAWN_SQUARE) % 8) != 0 && (STATE->_enpassantFile) - 9 == (PAWN_SQUARE))
         {
-            return (Square) * (PAWN_SQUARE)-1;
+            return (Square)  (PAWN_SQUARE)-1;
         }
-        if ((*(PAWN_SQUARE) % 8) != 7 && (STATE->_enpassantFile) - 7 == *(PAWN_SQUARE))
+        if (((PAWN_SQUARE) % 8) != 7 && (STATE->_enpassantFile) - 7 == (PAWN_SQUARE))
         {
-            return (Square) * (PAWN_SQUARE) + 1;
+            return (Square) (PAWN_SQUARE) + 1;
         }
         break;
 
     case 'w':
 
-        if ((*(PAWN_SQUARE) % 8) != 7 && (STATE->_enpassantFile) + 9 == *(PAWN_SQUARE))
+        if (((PAWN_SQUARE) % 8) != 7 && (STATE->_enpassantFile) + 9 == (PAWN_SQUARE))
         {
-            return (Square) * (PAWN_SQUARE) + 1;
+            return (Square) (PAWN_SQUARE) + 1;
         }
-        if ((*(PAWN_SQUARE) % 8) != 0 && (STATE->_enpassantFile) + 7 == *(PAWN_SQUARE))
+        if (((PAWN_SQUARE) % 8) != 0 && (STATE->_enpassantFile) + 7 == (PAWN_SQUARE))
         {
 
-            return (Square) * (PAWN_SQUARE)-1;
+            return (Square) (PAWN_SQUARE)-1;
         }
         break;
 
@@ -627,6 +627,13 @@ EnpassantMove doEnpassant(Pieces _chessBoard[64], GameState *_state, Square _paw
     move._prevZorbistHash = _state->_zobristHash;
     move._srcPiece = _chessBoard[_pawnSrc];
     move._side = _state->_pieceToMove;
+
+
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove;
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnSrc]][_pawnSrc];
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnDest]][_pawnDest];
+    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_originDist]][_originDist];
+
 
     switch (_state->_pieceToMove)
     {
@@ -656,10 +663,7 @@ EnpassantMove doEnpassant(Pieces _chessBoard[64], GameState *_state, Square _paw
     }
     _state->_numberHalfMoves = 0;
     _state->_enpassantFile = 0;
-    _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove;
-    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnSrc]][_pawnSrc];
-    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnDest]][_pawnDest];
-    _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_originDist]][_originDist];
+
 
     return move;
 }
@@ -699,9 +703,6 @@ void undoEnpassant(Pieces _chessBoard[64], EnpassantMove *MOVE, GameState *_stat
     }
 }
 
-Move undoEnpassant(Pieces _chessBoard[64], GameState *_state, Move *_move)
-{
-}
 
 __uint64_t *givePositionCountUntilDepth(GameState *_state, int _depth)
 {

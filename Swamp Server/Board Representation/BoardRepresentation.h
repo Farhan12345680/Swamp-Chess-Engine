@@ -30,7 +30,7 @@ void initializer(){
     piecePuter(_chessBoard , _globalGameState._whiteKnights, WHITE_KNIGHT);
     piecePuter(_chessBoard, _globalGameState._whiteQueens, WHITE_QUEEN);
     piecePuter(_chessBoard, _globalGameState._whiteKing, WHITE_KING);
-    piecePuter(_chessBoard , _globalGameState._occupancy , ES);
+    piecePuter(_chessBoard , ~(_globalGameState._occupancy) , ES);
 }
 
 
@@ -51,15 +51,15 @@ void initializerFromFen(char* FEN_STRING){
     piecePuter(_chessBoard , _globalGameState._whiteKnights, WHITE_KNIGHT);
     piecePuter(_chessBoard, _globalGameState._whiteQueens, WHITE_QUEEN);
     piecePuter(_chessBoard, _globalGameState._whiteKing, WHITE_KING);
-    piecePuter(_chessBoard , _globalGameState._occupancy , ES);
+    piecePuter(_chessBoard , ~_globalGameState._occupancy , ES);
 }
 
 
 
 void printBoard()
 {
-    for (int i = 64; i >= 0; i--)
-        if(i%8==0 && i!=64){
+    for (int i = 64; i > 0; i--)
+    {
             switch(_chessBoard[i-1]){
                 case BLACK_ROOK:
                     printf("%c ",'r');
@@ -104,10 +104,13 @@ void printBoard()
                 default:
                     break;
             }
-        }
-
         
-    
+            if(i%8==1 )
+            {
+                printf("\n");
+            }
+        
+    }
 }
 
 
