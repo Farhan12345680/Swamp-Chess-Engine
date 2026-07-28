@@ -52,6 +52,7 @@ public class Cli{
             System.out.println("9.  Print The Game Stack");
             System.out.println("10. Print Fen String of this Position");
             System.out.println("11. Stop Engine and Exit");
+            System.out.println("12. Print A Piece State");
             System.out.println();
             System.out.println();
 
@@ -102,6 +103,15 @@ public class Cli{
                 break;
             case "10":
                 
+                break;
+            case "12":
+                writer.write("12\n");
+                writer.flush();
+
+                String str122 = cliReader.readLine();
+                writer.write(str122+"\r\n");
+                writer.flush();
+                printReturnString(reader);
                 break;
             default:
                 break;

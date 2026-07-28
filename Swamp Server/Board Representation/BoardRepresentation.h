@@ -11,6 +11,20 @@ Pieces _chessBoard[64];
 ZorbistKeys _globalZorbistHashing={};
 GameState _globalGameState;
 
+void printPieceBitBoard(__uint64_t PIECE_BITBOARD , char CHAR)
+{
+    for(int i=63 ;i>=0; i--)
+    {
+        if(PIECE_BITBOARD & (1ULL << i)){
+            printf("%c ",CHAR );
+        }else{
+            printf(". ");
+        }
+        if(i%8==0){
+            printf("\n");
+        }
+    }
+}
 
 
 void initializer(){

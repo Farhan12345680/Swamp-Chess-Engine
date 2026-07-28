@@ -60,7 +60,45 @@ int main(){
             printf("END\n");
             fflush(stdout);
         }
+        else if(strcmp(_str , "12")==0)
+        {
+            char* _str1 = (char*)malloc(MAX_UCI_QUERY_LENGTH );
+            fgets(_str1 ,128,stdin );
 
+            _str1[strcspn(_str1, "\r\n")]='\0';
+
+            if(strcmp(_str1 ,"BLACK PAWN")==0)
+            {
+                printPieceBitBoard(_globalGameState._blackPawns , 'p');
+            }else if(strcmp(_str1 ,"BLACK KING")==0){
+                printPieceBitBoard(_globalGameState._blackKing , 'k');
+
+            }else if(strcmp(_str1 ,"BLACK QUEEN")==0){
+                printPieceBitBoard(_globalGameState._blackQueens, 'q');
+
+            }else if(strcmp(_str1 ,"BLACK BISHOP")==0){
+                printPieceBitBoard(_globalGameState._blackBishops, 'b');
+
+            }else if(strcmp(_str1 ,"BLACK ROOK")==0){
+                printPieceBitBoard(_globalGameState._blackRooks, 'r');
+            }else if(strcmp(_str1 ,"WHITE PAWN")==0){
+                printPieceBitBoard(_globalGameState._whitePawns, 'P');
+            }else if(strcmp(_str1 ,"WHITE KING")==0){
+                printPieceBitBoard(_globalGameState._whiteKing, 'K');
+            }else if(strcmp(_str1 ,"WHITE QUEEN")==0){
+                printPieceBitBoard(_globalGameState._whiteQueens, 'Q');
+            }else if(strcmp(_str1 ,"WHITE BISHOP")==0){
+                printPieceBitBoard(_globalGameState._whiteBishops, 'B');
+            }else if(strcmp(_str1 ,"WHITE ROOK")==0){
+                printPieceBitBoard(_globalGameState._whitePawns, 'R');
+
+            }
+
+            printf("END\n");
+            fflush(stdout); 
+
+            free(_str1);
+        }
     }
 
     free(_str);
