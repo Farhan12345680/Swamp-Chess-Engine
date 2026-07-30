@@ -1018,9 +1018,10 @@ void generateCastlingList(GameState *_state, MoveList *_moveList)
 }
 
 
-void makeEnpassantMove()
-{
 
+void makeEnpassantMove(GameState *_state , MoveList *_moveList)
+{
+    
 }
 
 inline void generateWhiteBishopMoveList(GameState *_state, MoveList *_moveList)
@@ -1060,10 +1061,23 @@ inline void generateWhitePawnMoveList(GameState* _state , MoveList* _moveList){
 }
 
 inline void generateWhiteKingMoveList(GameState* _state , MoveList* _moveList )
-{
+{   
+    generatePieceAttack(_state->_whiteKing , &_state->_whiteKing,
+        &_state->_whiteOccupancy , _state , 0 , _state->_whiteKing ,
+    _moveList, getKingAttackAndMovement);
+
+    generateCastlingList(_state, _moveList);
 
 }
 
+inline void generateBlackKingMoveList(GameState* _state , MoveList* _moveList)
+{
+    generatePieceAttack(_state->_blackKing , &_state->_blackKing,
+        &_state->_blackOccupancy , _state , 0 , _state->_blackKing ,
+    _moveList, getKingAttackAndMovement);
+
+    generateCastlingList(_state, _moveList);
+}
 
 inline void generateBlackBishopMoveList(GameState *_state, MoveList *_moveList)
 {
@@ -1093,9 +1107,80 @@ inline void generateBlackKnightMoveList(GameState* _state , MoveList* _moveList)
     , _moveList , &getKnightAttack);
 }
 
-inline void generateBlackPawnMoveList(GameState* _state , MoveList* _moveList)
+
+inline void generatePawnMovements(GameState* _state , MoveList* _moveList)
 {
+    if(_state->_pieceToMove== 'w')    
+    {
+        __uint64_t pawns = _state->_whitePawns;
 
+        while(pawns)
+        {   
+            int index = __builtin_ctzll(pawns);
+            pawns &= (pawns-1);
+
+            if(_chessBoard[index +8]==ES && index<56)
+            {   
+                Move move = doMove(
+                        _chessBoard, _state , index , index+8 
+                        , 0 , _state->_whiteOccupancy 
+                        , _state->_blackPawns , NULL, NULL  );
+
+                if(!isTheKingInCheck(_state->_whiteKing , getAttackBitBoard(_state))){
+                    _moveList->_moveArray[_moveList->index++] = move;
+                }
+                undoMove(_chessBoard , &move , _state);
+            }
+            if(index >7 && index < 16 && _chessBoard[index+8]==ES && _chessBoard[index+16]==ES ){
+                Move move = doMove(
+                        _chessBoard, _state , index , index+16 
+                        , 0 , _state->_whiteOccupancy 
+                        , _state->_blackPawns , NULL, NULL  );
+
+                if(!isTheKingInCheck(_state->_whiteKing , getAttackBitBoard(_state))){
+                    _moveList->_moveArray[_moveList->index++] = move;
+                }
+                undoMove(_chessBoard , &move , _state);
+            }
+            if(_chessBoard[index +8]==ES && index<56)
+            {   
+                Move move = doMove(
+                        _chessBoard, _state , index , index+8 
+                        , 0 , _state->_whiteOccupancy 
+                        , _state->_blackPawns , NULL, NULL  );
+
+                if(!isTheKingInCheck(_state->_whiteKing , getAttackBitBoard(_state))){
+                    _moveList->_moveArray[_moveList->index++] = move;
+                }
+                undoMove(_chessBoard , &move , _state);
+            }
+            if(index<56){
+                generatePieceAttack(pawns , &_state->_whitePawns,
+                                    &(_state->_whiteOccupancy),_state,0,
+                                _state->_whiteKing,_moveList,getWhitePawnAttack);
+            }
+
+            if(index >= 56){
+                generatePieceAttack(pawns , &_state->_whitePawns,
+                                    &(_state->_whiteOccupancy),_state,1,
+                                _state->_whiteKing,_moveList,getWhitePawnAttack);
+                generatePieceAttack(pawns , &_state->_whitePawns,
+                                    &(_state->_whiteOccupancy),_state,2,
+                                _state->_whiteKing,_moveList,getWhitePawnAttack);
+                                            generatePieceAttack(pawns , &_state->_whitePawns,
+                                    &(_state->_whiteOccupancy),_state,3,
+                                _state->_whiteKing,_moveList,getWhitePawnAttack);
+                                generatePieceAttack(pawns , &_state->_whitePawns,
+                                    &(_state->_whiteOccupancy),_state,4,
+                                _state->_whiteKing,_moveList,getWhitePawnAttack);
+
+            }
+            
+        }
+    }
+    else
+    {
+
+    }
 }
-
 

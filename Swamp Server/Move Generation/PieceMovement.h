@@ -646,41 +646,6 @@ static inline __uint64_t getKnightAttack(Square square,__uint64_t occupancy, __u
     return knightTable[square] & ~(sameSideOccupancy);
 }
 
-static inline __uint64_t getWhitePawnAttack(Square square,__uint64_t occupancy, __uint64_t otherSideOccupancy)
-{
-    return whitePawnTable[square] & otherSideOccupancy;
-}
-
-static inline __uint64_t getWhitePawnMovement(Square square,__uint64_t occupancy, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
-{
-
-    if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
-        return 0;
-    }
-    if((1ULL << (square+16)) & (otherSideOccupancy|ownSideOccupancy) )
-    {
-        return (1ULL << (square+8));
-    }
-    return ((whitePawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
-}
-
-// static inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
-// {
-//     if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
-//         return 0;
-//     }
-//     if((1ULL << (square+16)) & (otherSideOccupancy|ownSideOccupancy) )
-//     {
-//         return (1ULL << (square+8));
-//     }
-//     return ((blackPawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
-// }
-
-static inline __uint64_t getBlackPawnAttack(Square square,__uint64_t occupancy, __uint64_t otherSideOccupancy , __uint64_t sameSideOccupancy)
-{
-
-    return (blackPawnTable[square] & ~sameSideOccupancy) & otherSideOccupancy;
-}
 
 static inline bool isTheKingInCheck(Square square, __uint64_t attackTable)
 {
@@ -735,4 +700,34 @@ static inline __uint64_t getBlackPawnAttackPseudo(Square square)
 static inline __uint64_t getKingAttackAndMovementPseudo(Square square)
 {
     return kingTable[square];
+}
+
+
+
+static inline __uint64_t getWhitePawnAttack(Square square,__uint64_t occupancy, __uint64_t sameSideOccupancy)
+{
+    return (whitePawnTable[square] & ~sameSideOccupancy) & occupancy;
+}
+
+static inline __uint64_t getWhitePawnMovement(Square square,__uint64_t occupancy, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+{
+
+    if((1ULL << (square+8)) & (otherSideOccupancy|ownSideOccupancy) ){
+        return 0;
+    }
+    if((1ULL << (square+16)) & (otherSideOccupancy|ownSideOccupancy) )
+    {
+        return (1ULL << (square+8));
+    }
+    return ((whitePawnMovementTable[square] & ~otherSideOccupancy) & ~ownSideOccupancy);
+}
+
+// static inline __uint64_t getBlackPawnMovement(Square square, __uint64_t otherSideOccupancy, __uint64_t ownSideOccupancy)
+// {
+
+// }
+
+static inline __uint64_t getBlackPawnAttack(Square square,__uint64_t occupancy, __uint64_t sameSideOccupancy)
+{
+    return (blackPawnTable[square] & ~sameSideOccupancy) & occupancy;
 }
