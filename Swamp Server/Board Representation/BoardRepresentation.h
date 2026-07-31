@@ -27,11 +27,11 @@ void printPieceBitBoard(__uint64_t PIECE_BITBOARD , char CHAR)
 }
 
 
-void initializer(){
+void _initializer(){
     generateZorbistNumbers();
     _globalGameState=initiaizeNewGame();
     _globalGameState._evalValue=evaluateThisPosition(_globalGameState);
-
+    pieceInitializer();
     piecePuter(_chessBoard, _globalGameState._blackPawns, BLACK_PAWN);
     piecePuter(_chessBoard, _globalGameState._blackRooks, BLACK_ROOK);
     piecePuter(_chessBoard, _globalGameState._blackBishops, BLACK_BISHOP);
@@ -52,6 +52,7 @@ void initializerFromFen(char* FEN_STRING){
 
     _globalGameState=initializeNewGameFromString(FEN_STRING);
     _globalGameState._evalValue=evaluateThisPosition(_globalGameState);
+    pieceInitializer();
 
     piecePuter(_chessBoard, _globalGameState._blackPawns, BLACK_PAWN);
     piecePuter(_chessBoard, _globalGameState._blackRooks, BLACK_ROOK);

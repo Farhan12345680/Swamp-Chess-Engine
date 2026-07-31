@@ -454,26 +454,26 @@ static void generatePreCalculatedKnightAttack()
 
 static void generatePreCalculatedWhitePawnAttack()
 {
-    for (int i = 1; i <= 8; i++)
+    for (int i = 0; i <= 7; i++)
     {
-        for (int j = 1; j <= 8; j++)
+        for (int j = 0; j <= 7; j++)
         {
-            int _idx = (i - 1) * 8 + ((j - 1));
+            int _idx = (i) * 8 + ((j )); 
             whitePawnTable[_idx] = 0;
             __uint64_t _curr = 1ULL << _idx;
 
-            if (i == 1)
+            if (i == 7)
             {
                 continue;
             }
 
-            if ((i + 1) < 9 && (j - 1) > 0)
-            {
-                whitePawnTable[_idx] |= (_curr << 7);
-            }
-            if ((i + 1) < 9 && (j + 1) < 9)
+            if ((j) > 0)
             {
                 whitePawnTable[_idx] |= (_curr << 9);
+            }
+            if ((j ) < 7)
+            {
+                whitePawnTable[_idx] |= (_curr << 7);
             }
         }
     }
@@ -507,27 +507,22 @@ static void generatePreCalculateWhitePawnMovement()
 
 static void generatePreCalculateBlackPawnAttck()
 {
-    for (int i = 1; i <= 8; i++)
+    for (int i = 0; i <= 7; i++)
     {
-        for (int j = 1; j <= 8; j++)
+        for (int j = 0; j <= 7; j++)
         {
-            int _idx = (i - 1) * 8 + ((j - 1));
+            int _idx = (i) * 8 + ((j));
             blackPawnTable[_idx] = 0;
             __uint64_t _curr = 1ULL << _idx;
 
-            if (i == 8)
-            {
+            if (i == 0)
                 continue;
-            }
 
-            if ((i - 1) > 0 && (j - 1) > 0)
-            {
-                blackPawnTable[_idx] |= (_curr >> 9);
-            }
-            if ((i - 1) > 0 && (j + 1) < 9)
-            {
-                blackPawnTable[_idx] |= (_curr >> 7);
-            }
+            if (j > 0)
+                blackPawnTable[_idx] |= _curr >> 7;
+
+            if (j < 7)
+                blackPawnTable[_idx] |= _curr >> 9;
         }
     }
 }
@@ -626,6 +621,7 @@ void pieceInitializer()
 
 static inline __uint64_t getBishopAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
 {
+    occupancy &= bishopMask[square];
     __uint64_t _idx = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
     return bishopAttacks[square][_idx] & (~sameSideOccupancy);
 }

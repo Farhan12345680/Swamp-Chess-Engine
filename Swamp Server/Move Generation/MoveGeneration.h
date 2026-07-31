@@ -1,6 +1,6 @@
 #pragma once
 #include "../Board Representation/gameHistory.h"
-#include "PieceMovement.h"
+#include "./PieceMovement.h"
 
 extern Pieces _chessBoard[64];
 
@@ -18,11 +18,13 @@ typedef struct
 
     Pieces _destPiece;
     Pieces _srcPiece;
+    __uint64_t _prevOccupancy;
     __uint64_t _prevZorbistHash;
     __uint64_t *_colorOccupancySRC;
     __uint64_t *_pieceOccupancySRC;
     __uint64_t *_colorOccupancyDEST;
     __uint64_t *_pieceOccupancyDEST;
+
 
 } Move;
 
@@ -30,6 +32,7 @@ typedef struct
 {
     __uint8_t _prevCastle;
     __uint8_t _currState;
+    __uint64_t _prevOccupancy;
     char _enpassantFile;
 
 } CastleMove;
@@ -44,6 +47,7 @@ typedef struct
     __uint8_t _preHalfMove;
     __uint8_t _preFullMove;
     __uint8_t _srcPiece;
+    __uint64_t _prevOccupany;
     GameState *_prevState;
     __uint64_t _prevZorbistHash;
 
@@ -71,6 +75,7 @@ Move doMove(Pieces _chessBoard[64], GameState *_state,
     move._colorOccupancyDEST = _colorOccupancyDEST;
     move._pieceOccupancySRC = _pieceOccupancySRC;
     move._pieceOccupancyDEST = _pieceOccupancyDEST;
+    move._prevOccupancy= _state->_occupancy;
 
     __uint64_t mask = 1ULL << _dest;
     __uint64_t _srcMask = 1ULL << _src;
@@ -259,6 +264,7 @@ CastleMove doCastle(Pieces _chessBoard[64], GameState *_state, __uint8_t _castle
     move._enpassantFile = _state->_enpassantFile;
     move._prevCastle = _state->_castlingAvailable;
     _state->_numberHalfMoves += 1;
+    move._prevOccupancy=_state->_occupancy;
 
     switch (_castleSide)
     {
@@ -385,10 +391,8 @@ void undoCastle(Pieces _chessBoard[64], GameState *_state, CastleMove *move)
     {
     case 0b00001000:
         _state->_whiteOccupancy ^= (1ULL << G1) | (1ULL << F1);
-        _state->_occupancy ^= (1ULL << G1) | (1ULL << F1);
 
         _state->_whiteOccupancy |= (1ULL << H1) | (1ULL << E1);
-        _state->_occupancy |= (1ULL << H1) | (1ULL << E1);
 
         _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][E1];
         _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][G1];
@@ -410,11 +414,9 @@ void undoCastle(Pieces _chessBoard[64], GameState *_state, CastleMove *move)
 
     case 0b00000100:
         _state->_whiteOccupancy ^= (1ULL << C1) | (1ULL << D1);
-        _state->_occupancy ^= (1ULL << C1) | (1ULL << D1);
 
         _state->_whiteOccupancy |= (1ULL << A1) | (1ULL << E1);
 
-        _state->_occupancy |= (1ULL << A1) | (1ULL << E1);
 
         _state->_whiteRooks ^= 0b00001001;
         _state->_whiteKing = (1ULL << E1);
@@ -437,10 +439,7 @@ void undoCastle(Pieces _chessBoard[64], GameState *_state, CastleMove *move)
     case 0b00000010:
         _state->_numberMoves -= 1;
         _state->_blackOccupancy ^= (1ULL << G8) | (1ULL << F8);
-        _state->_occupancy ^= (1ULL << G8) | (1ULL << F8);
         _state->_blackOccupancy |= (1ULL << E8) | (1ULL << H8);
-
-        _state->_occupancy |= (1ULL << E8) | (1ULL << H8);
 
         _state->_blackRooks ^= (1ULL << H8) | (1ULL << F8);
         _state->_blackKing = (1ULL << E8);
@@ -462,12 +461,10 @@ void undoCastle(Pieces _chessBoard[64], GameState *_state, CastleMove *move)
     case 0b00000001:
         _state->_numberMoves -= 1;
         _state->_blackOccupancy ^= (1ULL << C8) | (1ULL << D8);
-        _state->_occupancy ^= (1ULL << C8) | (1ULL << D8);
 
         _state->_blackOccupancy |= (1ULL << A8) | (1ULL << E8);
         _state->_pieceToMove = 'b';
 
-        _state->_occupancy |= (1ULL << A8) | (1ULL << E8);
 
         _state->_blackRooks ^= (1ULL << A8) | (1ULL << D8);
         _state->_blackKing = (1ULL << E8);
@@ -489,6 +486,7 @@ void undoCastle(Pieces _chessBoard[64], GameState *_state, CastleMove *move)
         break;
     }
     _state->_enpassantFile = move->_enpassantFile;
+    _state->_occupancy = move->_prevOccupancy;
 }
 
 void undoMove(Pieces _chessBoard[64], Move *move, GameState *_state)
@@ -508,13 +506,8 @@ void undoMove(Pieces _chessBoard[64], Move *move, GameState *_state)
     {
         *(move->_colorOccupancyDEST) ^= 1ULL << (move->_dest);
         *(move->_pieceOccupancyDEST) ^= 1ULL << (move->_dest);
-        _state->_occupancy |= 1ULL << (move->_src) | 1ULL << (move->_dest);
     }
-    else
-    {
-
-        _state->_occupancy |= 1ULL << (move->_src);
-    }
+    
 
     _state->_numberMoves = move->_preFullMove;
     _state->_numberHalfMoves = move->_preHalfMove;
@@ -569,6 +562,7 @@ void undoMove(Pieces _chessBoard[64], Move *move, GameState *_state)
             break;
         }
     }
+    _state->_occupancy=move->_prevOccupancy;
 }
 
 Square findEnpassantSquare(GameState *STATE, Square PAWN_SQUARE, Pieces CHESS_BOARD[64])
@@ -627,6 +621,7 @@ EnpassantMove doEnpassant(Pieces _chessBoard[64], GameState *_state, Square _paw
     move._prevZorbistHash = _state->_zobristHash;
     move._srcPiece = _chessBoard[_pawnSrc];
     move._side = _state->_pieceToMove;
+    move._prevOccupany= _state->_occupancy;
 
     _state->_zobristHash ^= _globalZorbistHashing._zorbistSideToMove;
     _state->_zobristHash ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnSrc]][_pawnSrc];
@@ -672,7 +667,7 @@ void undoEnpassant(Pieces _chessBoard[64], EnpassantMove *MOVE, GameState *_stat
     _state->_numberMoves = MOVE->_preFullMove;
     _state->_enpassantFile = MOVE->_enpassantFile;
     _state->_pieceToMove = MOVE->_side;
-
+    _state->_occupancy= MOVE->_prevOccupany;
     switch (_state->_pieceToMove)
     {
     case 'w':
@@ -715,7 +710,7 @@ typedef struct
 
 } MoveList;
 
-__uint64_t getAttackBitBoard(GameState *_state)
+static inline __uint64_t getAttackBitBoard(GameState *_state)
 {
     __uint64_t attacks = 0;
     __uint64_t temp;
@@ -728,7 +723,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getBishopAttack(sq, _state->_occupancy, &_state->_blackOccupancy);
+            attacks |= getBishopAttack(sq, _state->_occupancy, _state->_blackOccupancy);
         }
 
         temp = _state->_blackRooks;
@@ -736,7 +731,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getRookAttack(sq, _state->_occupancy, &_state->_blackOccupancy);
+            attacks |= getRookAttack(sq, _state->_occupancy, _state->_blackOccupancy);
         }
 
         temp = _state->_blackQueens;
@@ -744,7 +739,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getQueenAttack(sq, _state->_occupancy, &_state->_blackOccupancy);
+            attacks |= getQueenAttack(sq, _state->_occupancy, _state->_blackOccupancy);
         }
 
         temp = _state->_blackKnights;
@@ -752,7 +747,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getKnightAttack(sq, _state->_occupancy, &_state->_blackOccupancy);
+            attacks |= getKnightAttack(sq, _state->_occupancy, _state->_blackOccupancy);
         }
 
         temp = _state->_blackPawns;
@@ -760,13 +755,13 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getBlackPawnAttack(sq, _state->_occupancy, &_state->_blackOccupancy);
+            attacks |= getBlackPawnAttack(sq, _state->_occupancy, _state->_blackOccupancy);
         }
 
-        attacks |= getKingAttack(
+        attacks |= getKingAttackAndMovement(
             __builtin_ctzll(_state->_blackKing),
             _state->_occupancy,
-            &_state->_blackOccupancy);
+            _state->_blackOccupancy);
     }
     else
     {
@@ -776,7 +771,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getBishopAttack(sq, _state->_occupancy, &_state->_whiteOccupancy);
+            attacks |= getBishopAttack(sq, _state->_occupancy, _state->_whiteOccupancy);
         }
 
         temp = _state->_whiteRooks;
@@ -784,7 +779,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getRookAttack(sq, _state->_occupancy, &_state->_whiteOccupancy);
+            attacks |= getRookAttack(sq, _state->_occupancy, _state->_whiteOccupancy);
         }
 
         temp = _state->_whiteQueens;
@@ -792,7 +787,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getQueenAttack(sq, _state->_occupancy, &_state->_whiteOccupancy);
+            attacks |= getQueenAttack(sq, _state->_occupancy, _state->_whiteOccupancy);
         }
 
         temp = _state->_whiteKnights;
@@ -800,7 +795,7 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getKnightAttack(sq, _state->_occupancy, &_state->_whiteOccupancy);
+            attacks |= getKnightAttack(sq, _state->_occupancy, _state->_whiteOccupancy);
         }
 
         temp = _state->_whitePawns;
@@ -808,13 +803,13 @@ __uint64_t getAttackBitBoard(GameState *_state)
         {
             Square sq = __builtin_ctzll(temp);
             temp &= temp - 1;
-            attacks |= getWhitePawnAttack(sq, _state->_occupancy, &_state->_whiteOccupancy);
+            attacks |= getWhitePawnAttack(sq, _state->_occupancy, _state->_whiteOccupancy);
         }
 
-        attacks |= getKingAttack(
+        attacks |= getKingAttackAndMovement(
             __builtin_ctzll(_state->_whiteKing),
             _state->_occupancy,
-            &_state->_whiteOccupancy);
+            _state->_whiteOccupancy);
     }
 
     return attacks;
@@ -834,7 +829,7 @@ void generatePieceAttack(__uint64_t _temp, __uint64_t *_srcPieceOccupancy,
         __uint64_t attacks =
             pieceAttackFunction(src,
                                 _state->_occupancy,
-                                _srcColorOccupancy);
+                                *_srcColorOccupancy);
 
         while (attacks)
         {
@@ -924,7 +919,7 @@ void generatePieceAttack(__uint64_t _temp, __uint64_t *_srcPieceOccupancy,
                 capturedPiece);
 
             if (!isTheKingInCheck(_currKingBitBoard,
-                                  getAttackBitboard(_state)))
+                                  getAttackBitBoard(_state)))
             {
                 _moveList->_moveArray[_moveList->index++] = undo;
             }
@@ -933,6 +928,9 @@ void generatePieceAttack(__uint64_t _temp, __uint64_t *_srcPieceOccupancy,
         }
     }
 }
+
+
+// move generation
 
 void generateCastlingList(GameState *_state, MoveList *_moveList)
 {
@@ -998,41 +996,37 @@ void generateCastlingList(GameState *_state, MoveList *_moveList)
     }
 }
 
-void makeEnpassantMove(GameState *_state, MoveList *_moveList)
-{
-}
-
-inline void generateWhiteBishopMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhiteBishopMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whiteBishops, &_state->_whiteBishops,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing, _moveList, &getBishopAttack);
 }
 
-inline void generateWhiteRookMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhiteRookMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whiteRooks, &_state->_whiteRooks,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing, _moveList, &getRookAttack);
 }
 
-inline void generateWhiteQueenMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhiteQueenMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whiteQueens, &_state->_whiteQueens,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing, _moveList, &getQueenAttack);
 }
 
-inline void generateWhiteKnightMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhiteKnightMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whiteKnights, &_state->_whiteKnights,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing, _moveList, &getKnightAttack);
 }
 
-inline void generateWhitePawnMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhitePawnMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whitePawns, &_state->_whitePawns,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing, _moveList, &getWhitePawnAttack);
 }
 
-inline void generateWhiteKingMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateWhiteKingMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_whiteKing, &_state->_whiteKing,
                         &_state->_whiteOccupancy, _state, 0, _state->_whiteKing,
@@ -1041,7 +1035,7 @@ inline void generateWhiteKingMoveList(GameState *_state, MoveList *_moveList)
     generateCastlingList(_state, _moveList);
 }
 
-inline void generateBlackKingMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateBlackKingMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_blackKing, &_state->_blackKing,
                         &_state->_blackOccupancy, _state, 0, _state->_blackKing,
@@ -1050,31 +1044,31 @@ inline void generateBlackKingMoveList(GameState *_state, MoveList *_moveList)
     generateCastlingList(_state, _moveList);
 }
 
-inline void generateBlackBishopMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateBlackBishopMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_blackBishops, &_state->_blackBishops,
                         &_state->_blackOccupancy, _state, 0, _state->_blackKing, _moveList, &getBishopAttack);
 }
 
-inline void generateBlackRookMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateBlackRookMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_blackRooks, &_state->_blackRooks,
                         &_state->_blackOccupancy, _state, 0, _state->_blackKing, _moveList, &getRookAttack);
 }
 
-inline void generateBlackQueenMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateBlackQueenMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_blackQueens, &_state->_blackQueens,
                         &_state->_blackOccupancy, _state, 0, _state->_blackKing, _moveList, &getQueenAttack);
 }
 
-inline void generateBlackKnightMoveList(GameState *_state, MoveList *_moveList)
+static inline void generateBlackKnightMoveList(GameState *_state, MoveList *_moveList)
 {
     generatePieceAttack(_state->_blackKnights, &_state->_blackKnights,
                         &_state->_blackOccupancy, _state, 0, _state->_blackKing, _moveList, &getKnightAttack);
 }
 
-inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
+static inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
 {
     if (_state->_pieceToMove == 'w')
     {
@@ -1098,7 +1092,7 @@ inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
             }
             if (index > 7 && index < 16 && _chessBoard[index + 8] == ES && _chessBoard[index + 16] == ES)
             {
-                _state->_enpassantFile=(index)%8 +'a';
+                _state->_enpassantFile=index+8;
                 Move move = doMove(
                     _chessBoard, _state, index, index + 16, 0, &_state->_whiteOccupancy, &_state->_whitePawns, NULL, NULL);
 
@@ -1138,6 +1132,15 @@ inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
                                         _state->_whiteKing, _moveList, getWhitePawnAttack);
                 }
             }
+            int square = findEnpassantSquare(_state , index , _chessBoard);
+            if(square!=100){
+
+                EnpassantMove move= doEnpassant(_chessBoard , _state, index, _state->_enpassantFile, square);
+                if(!isTheKingInCheck(_state->_whiteKing , getAttackBitBoard(_state))){
+                    _moveList->_enpassantMoveArray[_moveList->enpassantIndex++]=move;
+                }
+                undoEnpassant(_chessBoard ,&move , _state );
+            }
         }
     }
     else
@@ -1172,7 +1175,7 @@ inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
                 _chessBoard[index - 8] == ES &&
                 _chessBoard[index - 16] == ES)
             {
-                _state->_enpassantFile=(index)%8 +'a';
+                _state->_enpassantFile=(index-8);
 
                 Move move = doMove(
                     _chessBoard, _state,
@@ -1240,6 +1243,88 @@ inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
                         getBlackPawnAttack);
                 }
             }
+            int square = findEnpassantSquare(_state , index , _chessBoard);
+            if(square!=100){
+                EnpassantMove move= doEnpassant(_chessBoard , _state, index, _state->_enpassantFile, square);
+                if(!isTheKingInCheck(_state->_blackKing , getAttackBitBoard(_state))){
+                    _moveList->_enpassantMoveArray[_moveList->enpassantIndex++]=move;
+                }
+                undoEnpassant(_chessBoard ,&move , _state );
+            }
+
         }
     }
+}
+
+void generateMoveList(GameState* _state , MoveList* _moves)
+{
+    if(_state->_pieceToMove =='w'){
+        generatePawnMovements(_state , _moves);
+        generateWhiteBishopMoveList(_state , _moves);
+        generateWhiteRookMoveList(_state , _moves);
+        generateWhiteQueenMoveList(_state , _moves);
+        generateWhiteKnightMoveList(_state , _moves);
+        generateWhiteKingMoveList(_state , _moves);
+    }else{
+        generatePawnMovements(_state , _moves);
+        generateBlackBishopMoveList(_state , _moves);
+        generateBlackRookMoveList(_state , _moves);
+        generateBlackQueenMoveList(_state , _moves);
+        generateBlackKnightMoveList(_state , _moves);
+        generateBlackKingMoveList(_state , _moves);
+    }
+}
+
+uint64_t perft(GameState *state, int depth)
+{
+    if (depth == 0)
+        return 1;
+
+    MoveList moves ;
+    moves.index=0;
+    moves.castlingIndex=0;
+    moves.enpassantIndex=0;
+    generateMoveList(state, &moves);
+
+    uint64_t nodes = 0;
+
+    for (int i = 0; i < moves.index; i++)
+    {
+        Move move = moves._moveArray[i];
+
+        doMove(_chessBoard , state ,move._src , move._dest , move._promotion , move._colorOccupancySRC,
+        move._pieceOccupancySRC , move._colorOccupancyDEST , move._pieceOccupancyDEST );
+
+
+        nodes += perft(state, depth - 1);
+
+        undoMove(_chessBoard , &move , state);
+    }
+
+    for (int i = 0; i < moves.enpassantIndex; i++)
+    {
+        EnpassantMove move = moves._enpassantMoveArray[i];
+
+        doEnpassant(_chessBoard , state , move._pawnSrc , move._pawnDest , move._originDest);
+        
+
+
+        nodes += perft(state, depth - 1);
+
+        undoEnpassant(_chessBoard , &move , state);
+    }
+
+    for (int i = 0; i < moves.castlingIndex; i++)
+    {
+        CastleMove move = moves._castlingMoveArray[i];
+
+        doCastle(_chessBoard , state , move._currState);
+
+
+        nodes += perft(state, depth - 1);
+
+        undoCastle(_chessBoard , state , &move);
+    }
+
+    return nodes;
 }
