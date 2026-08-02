@@ -628,6 +628,7 @@ static inline __uint64_t getBishopAttack(Square square, __uint64_t occupancy, __
 
 static inline __uint64_t getRookAttack(Square square, __uint64_t occupancy, __uint64_t sameSideOccupancy)
 {
+    occupancy &= rookMask[square];
     __uint64_t _idx = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
     return rookAttacks[square][_idx] & (~sameSideOccupancy);
 }

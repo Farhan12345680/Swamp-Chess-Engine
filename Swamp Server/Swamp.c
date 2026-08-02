@@ -112,8 +112,8 @@
 int main(){
     _initializer();
 
-    for(int i=1;i<=8; i++){
-        printf("perft %d is %ld\n",i,perft(&_globalGameState , i));
+    for(int i=6;i<=6; i++){
+        printf("perft %d is %ld\n",i,perft(&_globalGameState , 2));
 
     }
 }

@@ -1152,7 +1152,7 @@ static inline void generatePawnMovements(GameState *_state, MoveList *_moveList)
             int index = __builtin_ctzll(pawns);
             pawns &= (pawns - 1);
 
-            if (index >= 8 && index<=15 && _chessBoard[index - 8] == ES)
+            if (index >= 8 && _chessBoard[index - 8] == ES)
             {
                 Move move = doMove(
                     _chessBoard, _state,
@@ -1266,8 +1266,9 @@ void generateMoveList(GameState* _state , MoveList* _moves)
         generateWhiteKnightMoveList(_state , _moves);
         generateWhiteKingMoveList(_state , _moves);
     }else{
+                generateBlackBishopMoveList(_state , _moves);
+
         generatePawnMovements(_state , _moves);
-        generateBlackBishopMoveList(_state , _moves);
         generateBlackRookMoveList(_state , _moves);
         generateBlackQueenMoveList(_state , _moves);
         generateBlackKnightMoveList(_state , _moves);
@@ -1294,7 +1295,11 @@ uint64_t perft(GameState *state, int depth)
 
         doMove(_chessBoard , state ,move._src , move._dest , move._promotion , move._colorOccupancySRC,
         move._pieceOccupancySRC , move._colorOccupancyDEST , move._pieceOccupancyDEST );
-
+        if(depth==1){
+            char a;
+            printBoard(_chessBoard);
+            scanf("%c", &a);
+        }
 
         nodes += perft(state, depth - 1);
 
@@ -1306,7 +1311,11 @@ uint64_t perft(GameState *state, int depth)
         EnpassantMove move = moves._enpassantMoveArray[i];
 
         doEnpassant(_chessBoard , state , move._pawnSrc , move._pawnDest , move._originDest);
-        
+        if(depth==1){
+            char a;
+            printBoard(_chessBoard);
+            scanf("%c", &a);
+        }
 
 
         nodes += perft(state, depth - 1);
@@ -1319,7 +1328,11 @@ uint64_t perft(GameState *state, int depth)
         CastleMove move = moves._castlingMoveArray[i];
 
         doCastle(_chessBoard , state , move._currState);
-
+        if(depth==1){
+            char a;
+            printBoard(_chessBoard);
+            scanf("%c", &a);
+        }
 
         nodes += perft(state, depth - 1);
 
