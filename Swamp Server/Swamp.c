@@ -1,10 +1,10 @@
-#include "./Board Representation/BoardRepresentation.h"
-#include "./Move Generation/MoveGeneration.h"
-#include "./Move Generation/PieceMovement.h"
-#include <string.h>
-#include <stdio.h>
-
-
+// #include "./Board Representation/BoardRepresentation.h"
+// #include "./Move Generation/MoveGeneration.h"
+// #include "./Move Generation/PieceMovement.h"
+// #include <string.h>
+// #include <stdio.h>
+#include "Swamp.h"
+#include "debugSwamp.h"
 
 
 // int main(){
@@ -110,10 +110,16 @@
 
 
 int main(){
-    _initializer();
+    //         initializer();
+    // printBoard();
 
-    for(int i=6;i<=6; i++){
-        printf("perft %d is %ld\n",i,perft(&_globalGameState , 2));
+    // swampDebugServer();
 
+    uint64_t arr[9] ={1 , 20 , 400 , 8902 , 197281 , 4865609 , 119060324, 3195901860  };
+    for(int i=1;i<=6; i++){
+        initializer();
+        uint64_t perft1=perft(i);
+        printf("perft %d is %ld correct -> %ld diff ->%ld\n",i,perft1, arr[i] , arr[i] - perft1);
+        // divide(3);
     }
 }
