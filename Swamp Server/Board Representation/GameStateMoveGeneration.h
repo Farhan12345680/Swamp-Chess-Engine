@@ -215,9 +215,6 @@ typedef struct
 
 static bool isSquareAttacked(Square square, int opp);
 
-
-
-
 // ----------------------------------------
 // ------------- GLOBAL VARIABLE ----------
 // ----------------------------------------
@@ -2259,6 +2256,70 @@ uint64_t divide(int depth)
     return total;
 }
 
+uint64_t perftBULK(int depth)
+{           
+
+    if (depth == 1){
+        MoveList moves = {0};
+        generateMoveList(&moves);
+        return moves.index+moves.enpassantIndex+moves.castlingIndex;
+
+    }
+
+    MoveList moves = {0};
+    generateMoveList(&moves);
+
+    uint64_t nodes = 0;
+
+    // Normal moves
+    for (int i = 0; i < moves.index; i++)
+    {
+        Move *move = &moves._moveArray[i];
+
+        doMove(move->_src,
+               move->_dest,
+               move->_promotion,
+               move->_colorOccupancySRC,
+               move->_pieceOccupancySRC,
+               move->_colorOccupancyDEST,
+               move->_pieceOccupancyDEST, move->_newEnpassant);
+
+        nodes += perftBULK(depth - 1);
+
+        undoMove(move);
+
+    }
+
+    for (int i = 0; i < moves.enpassantIndex; i++)
+    {
+        EnpassantMove *move = &moves._enpassantMoveArray[i];
+
+        
+        doEnpassant((Square)move->_pawnSrc,
+                    (Square)move->_pawnDest,
+                    (Square)move->_originDest);
+
+        nodes += perftBULK(depth - 1);
+
+        undoEnpassant(move);
+
+    }
+
+    // Castling
+    for (int i = 0; i < moves.castlingIndex; i++)
+    {
+        CastleMove *move = &moves._castlingMoveArray[i];
+
+        doCastle(move->_currState);
+
+        nodes += perftBULK(depth - 1);
+
+        undoCastle(move);
+
+    }
+
+    return nodes;
+}
 
 // -------------------------------------------
 // ------------- INITIALIZATION HELPER -------
@@ -2328,11 +2389,10 @@ uint64_t evaluateThisPosition()
     return 0;
 };
 
-void initializer()
-{
-    emptyInitializationHelper();
-
+void initializeHelperFunc(){
     pieceInitializer();
+        piecePuter(~(0ULL), ES);
+
     piecePuter(GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN);
     piecePuter(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK);
     piecePuter(GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP);
@@ -2348,6 +2408,11 @@ void initializer()
     piecePuter(~(GAME_STATE[TOTAL_OCCUPANCY]), ES);
 }
 
-void initializeFromFenString()
+
+void initializer()
 {
+    emptyInitializationHelper();
+
+    initializeHelperFunc();
 }
+
