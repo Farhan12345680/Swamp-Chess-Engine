@@ -1,19 +1,30 @@
 #include "./Board Representation/GameStateMoveGeneration.h"
 #include "./UCI Server/UCI.h"
-#include "./Board Representation/FEN_parser.h"
+#include "./engine/engine.h"
 
 
+
+
+// int main(){
+
+
+
+
+
+//     for(int i=7;i<=7; i++){
+//         initializer();
+//         uint64_t perft1=perftBULK(i);
+//         // divide(3);
+//     }
+// }
 
 
 int main(){
+    pthread_t thread1;
+    pthread_create(&thread1,NULL , EngineHandler ,(void*)retValueOfComputation);
+    pthread_t thread2 ;
+    pthread_create(&thread2,NULL , UCI_SERVER , (void*) retValueOfComputation);
 
 
-
-
-
-    for(int i=7;i<=7; i++){
-        initializer();
-        uint64_t perft1=perftBULK(i);
-        // divide(3);
-    }
+    pthread_join(thread2 , NULL);
 }

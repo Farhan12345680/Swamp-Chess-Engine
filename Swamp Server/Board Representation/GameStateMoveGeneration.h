@@ -150,64 +150,9 @@ typedef struct
 #define EMPTY_SQUARE 22
 #define NO_PIECE 23
 
-#define MAX_MOVE_COUNT 128
-
-typedef struct
-{
-
-    uint8_t _prevCastlingState;
-    uint8_t _promotion;
-    uint8_t _preHalfMove;
-    uint8_t _preFullMove;
-    uint8_t _enpassantSquare;
-    uint8_t _side;
-
-    uint8_t _src;
-    uint8_t _dest;
-
-    uint8_t _destPiece;
-    uint8_t _srcPiece;
-
-    uint8_t _colorOccupancySRC;
-    uint8_t _pieceOccupancySRC;
-    uint8_t _colorOccupancyDEST;
-    uint8_t _pieceOccupancyDEST;
-
-    uint64_t _prevOccupancy;
-    uint64_t _prevZorbistHash;
-    uint8_t _newEnpassant; 
-} Move;
-
-typedef struct
-{
-    uint8_t _prevCastle;
-    uint8_t _currState;
-    uint8_t _enpassantSquare;
-    uint64_t _prevOccupancy;
-    uint8_t _side;
+#define MAX_MOVE_COUNT 256
 
 
-    int _prevFullNumber;
-    int _prevHalfNumber;
-
-
-} CastleMove;
-
-typedef struct
-{
-    uint8_t _pawnSrc;
-    uint8_t _pawnDest;
-    uint8_t _originDest;
-    uint8_t _side;
-    uint8_t _enpassantSquare;
-    uint8_t _preHalfMove;
-    uint8_t _preFullMove;
-    uint8_t _srcPiece;
-
-    uint64_t _prevOccupany;
-    uint64_t _prevZorbistHash;
-
-} EnpassantMove;
 
 // ----------------------------------------
 // ------- function forward Decleration ---
@@ -335,6 +280,7 @@ void printPieceBitBoard(uint64_t bitboard, char piece)
         printf("\n");
     }
 }
+
 void printBoard(void)
 {
     for (int rank = 7; rank >= 0; rank--)
@@ -391,6 +337,22 @@ void printBoard(void)
 
         printf("\n");
     }
+
+    printf("castling available %d%d%d%d\n" ,(GAME_STATE[CASTLING_AVAILABLE]&(1<<3)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<2)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<1)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<0)));
+
+    printf("Side to Move %c\n", (GAME_STATE[SIDE] == 6)?'b':'w');
+    if(GAME_STATE[ENPASSANT_SQUARE]==ES){
+        printf("Enpassant File ES\n");
+    }else{
+        printf("Enpassant File %c%c\n", ((char)(GAME_STATE[ENPASSANT_SQUARE]%8)+'a'), ((char)(GAME_STATE[ENPASSANT_SQUARE]/8)+'1'));
+    }
+
+    printf("Full Move %d\n",(int)GAME_STATE[NUMBER_FULL_MOVES]);
+    printf("HALF Move %d\n",(int)GAME_STATE[NUMBER_HALF_MOVES]);
+
 }
 
 // ------------------------------------------
@@ -958,16 +920,16 @@ static inline bool isTheKingInCheck(int curr, int opp)
     }
     else
     {
-    
+
         if (whitePawnTable[kingSq] & GAME_STATE[BLACK_PAWN_OCCUPANCY])
             return true;
     }
 
-    
+
     if (kingTable[kingSq] & GAME_STATE[opp])
         return true;
 
-    
+
     if (getBishopAttack(kingSq, occ, ownOcc) &
         (GAME_STATE[opp + 3] | GAME_STATE[opp + 1]))
         return true;
@@ -979,6 +941,7 @@ static inline bool isTheKingInCheck(int curr, int opp)
 
     return false;
 }
+
 static inline uint64_t getKingAttackAndMovement(Square square, uint64_t sameSideOccupancy, uint64_t otherSideAttackTable)
 {
     return kingTable[square] & ~(sameSideOccupancy) & ~(otherSideAttackTable);
@@ -999,31 +962,11 @@ static inline uint64_t getBlackPawnAttack(Square square, uint64_t occupancy, uin
 // ------------------- MOVE GENERATION ----------------
 // ----------------------------------------------------
 
-Move doMove(
+void doMove(
     uint8_t _src, uint8_t _dest, uint8_t _promotion,
     uint8_t _colorOccupancySRC, uint8_t _pieceOccupancySRC,
     uint8_t _colorOccupancyDEST, uint8_t _pieceOccupancyDEST, Square EN)
 {
-
-
-    Move move;
-    move._prevCastlingState = GAME_STATE[CASTLING_AVAILABLE];
-    move._promotion = _promotion;
-    move._preHalfMove = GAME_STATE[NUMBER_HALF_MOVES];
-    move._preFullMove = GAME_STATE[NUMBER_FULL_MOVES];
-    move._enpassantSquare = GAME_STATE[ENPASSANT_SQUARE];
-    move._side = GAME_STATE[SIDE];
-
-    move._dest = _dest;
-    move._src = _src;
-    move._destPiece = _chessBoard[_dest];
-    move._srcPiece = _chessBoard[_src];
-    move._prevZorbistHash = GAME_STATE[ZORBIST_HASH];
-    move._colorOccupancySRC = _colorOccupancySRC;
-    move._colorOccupancyDEST = _colorOccupancyDEST;
-    move._pieceOccupancySRC = _pieceOccupancySRC;
-    move._pieceOccupancyDEST = _pieceOccupancyDEST;
-    move._prevOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
 
     uint64_t mask = 1ULL << _dest;
     uint64_t _srcMask = 1ULL << _src;
@@ -1031,6 +974,8 @@ Move doMove(
 
     GAME_STATE[_colorOccupancySRC] ^= _gMask;
     GAME_STATE[_pieceOccupancySRC] ^= _gMask;
+
+
 
     GAME_STATE[TOTAL_OCCUPANCY] ^= _srcMask;
     GAME_STATE[TOTAL_OCCUPANCY] |= mask;
@@ -1042,7 +987,6 @@ Move doMove(
     }
 
     GAME_STATE[NUMBER_FULL_MOVES] += GAME_STATE[SIDE] >> 2;
-    GAME_STATE[SIDE] ^= 6;
 
     GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
     GAME_STATE[CASTLING_AVAILABLE] = GAME_STATE[CASTLING_AVAILABLE] & CASTLING_ARRAY[_src];
@@ -1069,71 +1013,29 @@ Move doMove(
 
     GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistSideToMove;
     GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_dest]][_dest];
-    GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[srcp][_src]; 
+    GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[srcp][_src];
 
     GAME_STATE[ENPASSANT_SQUARE] = EN;
-    move._newEnpassant = EN;
+
     if (_promotion)
     {
-        GAME_STATE[move._side + 5] ^= mask;
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[(Pieces)move._side + 5][_dest];
-        _chessBoard[_dest] = (Pieces)(move._side + _promotion);
-        GAME_STATE[(Pieces)(move._side + _promotion)] ^= mask;
+        int pawn = GAME_STATE[SIDE]+5;
+        int promotionSquare = (GAME_STATE[SIDE] + _promotion);
+        GAME_STATE[pawn] ^= mask;
+        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[pawn][_dest];
+        _chessBoard[_dest] =(Pieces) promotionSquare;
+        GAME_STATE[promotionSquare] ^= mask;
         GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_dest]][_dest];
     }
+    GAME_STATE[SIDE] ^= 6;
 
-    return move;
 }
 
-void undoMove(Move *move)
+
+void doCastle(uint8_t _castleSide)
 {
-
-    GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastlingState;
-
-    uint64_t mask = 1ULL << move->_dest;
-    uint64_t _srcMask = 1ULL << move->_src;
-    uint64_t _gMask = mask | _srcMask;
-
-    GAME_STATE[ENPASSANT_SQUARE] = move->_enpassantSquare;
-
-
-
-    _chessBoard[move->_dest] = (Pieces)move->_destPiece;
-    _chessBoard[move->_src] = (Pieces)move->_srcPiece;
-
-    GAME_STATE[move->_colorOccupancySRC] ^= _gMask;
-    GAME_STATE[move->_pieceOccupancySRC] ^= _gMask;
-
-    if (move->_colorOccupancyDEST != NO_PIECE && move->_pieceOccupancyDEST != NO_PIECE)
-    {
-        GAME_STATE[move->_colorOccupancyDEST] ^= mask;
-        GAME_STATE[move->_pieceOccupancyDEST] ^= mask;
-    }
-
-    GAME_STATE[NUMBER_FULL_MOVES] = move->_preFullMove;
-    GAME_STATE[NUMBER_HALF_MOVES] = move->_preHalfMove;
-
-    GAME_STATE[ZORBIST_HASH] = move->_prevZorbistHash;
-    GAME_STATE[SIDE] = move->_side;
-
-    int _promotion = move->_promotion;
-    if (_promotion)
-    {
-        GAME_STATE[move->_side + 5] ^= _srcMask;
-        _chessBoard[move->_src] = (Pieces)(move->_side + 5);
-        GAME_STATE[move->_side + _promotion] ^= mask;
-    }
-
-    GAME_STATE[TOTAL_OCCUPANCY] = move->_prevOccupancy;
-}
-
-CastleMove doCastle(uint8_t _castleSide)
-{
-    CastleMove move;
-    move._enpassantSquare = GAME_STATE[ENPASSANT_SQUARE];
-    move._prevCastle = GAME_STATE[CASTLING_AVAILABLE];
     GAME_STATE[NUMBER_HALF_MOVES] += 1;
-    move._prevOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
+
 
     switch (_castleSide)
     {
@@ -1153,7 +1055,8 @@ CastleMove doCastle(uint8_t _castleSide)
         GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
         GAME_STATE[CASTLING_AVAILABLE] &= 0b00000011;
         GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-
+        GAME_STATE[TOTAL_OCCUPANCY] |=
+            (1ULL << G1) | (1ULL << F1);
         _chessBoard[H1] = ES;
         _chessBoard[E1] = ES;
         _chessBoard[G1] = WHITE_KING;
@@ -1245,115 +1148,9 @@ CastleMove doCastle(uint8_t _castleSide)
         break;
     }
 
-    move._currState = _castleSide;
     GAME_STATE[ENPASSANT_SQUARE] = NS;
-    return move;
 }
 
-void undoCastle(CastleMove *move)
-{
-    GAME_STATE[NUMBER_HALF_MOVES] -= 1;
-    GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastle;
-
-    switch (move->_currState)
-    {
-    case 0b00001000:
-        GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << G1) | (1ULL << F1);
-
-        GAME_STATE[WHITE_OCCUPANCY] |= (1ULL << H1) | (1ULL << E1);
-
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][E1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][G1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_ROOK][H1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_ROOK][F1];
-
-        GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= 0b10100000;
-        GAME_STATE[WHITE_KING_OCCUPANCY] = (1ULL << E1);
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastle;
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[SIDE] ^= 6;
-
-        _chessBoard[H1] = WHITE_ROOK;
-        _chessBoard[E1] = WHITE_KING;
-        _chessBoard[G1] = ES;
-        _chessBoard[F1] = ES;
-        break;
-
-    case 0b00000100:
-        GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << C1) | (1ULL << D1);
-
-        GAME_STATE[WHITE_OCCUPANCY] |= (1ULL << A1) | (1ULL << E1);
-
-        GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= 0b00001001;
-        GAME_STATE[WHITE_KING_OCCUPANCY] = (1ULL << E1);
-        GAME_STATE[SIDE] ^= 6;
-
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][E1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_KING][C1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_ROOK][A1];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[WHITE_ROOK][D1];
-
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastle;
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-
-        _chessBoard[A1] = WHITE_ROOK;
-        _chessBoard[E1] = WHITE_KING;
-        _chessBoard[C1] = ES;
-        _chessBoard[D1] = ES;
-        break;
-    case 0b00000010:
-        GAME_STATE[NUMBER_FULL_MOVES] -= 1;
-        GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << G8) | (1ULL << F8);
-        GAME_STATE[BLACK_OCCUPANCY] |= (1ULL << E8) | (1ULL << H8);
-
-        GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << H8) | (1ULL << F8);
-        GAME_STATE[BLACK_KING_OCCUPANCY] = (1ULL << E8);
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_KING][E8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_KING][G8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][H8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][F8];
-
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastle;
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[SIDE] ^= 6;
-
-        _chessBoard[E8] = BLACK_KING;
-        _chessBoard[H8] = BLACK_ROOK;
-        _chessBoard[G8] = ES;
-        _chessBoard[F8] = ES;
-        break;
-    case 0b00000001:
-        GAME_STATE[NUMBER_FULL_MOVES] -= 1;
-        GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << C8) | (1ULL << D8);
-
-        GAME_STATE[BLACK_OCCUPANCY] |= (1ULL << A8) | (1ULL << E8);
-        GAME_STATE[SIDE] ^= 6;
-
-        GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << A8) | (1ULL << D8);
-        GAME_STATE[BLACK_KING_OCCUPANCY] = (1ULL << E8);
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_KING][E8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_KING][C8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][A8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[BLACK_ROOK][D8];
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-        GAME_STATE[CASTLING_AVAILABLE] = move->_prevCastle;
-        GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
-
-        _chessBoard[E8] = BLACK_KING;
-        _chessBoard[A8] = BLACK_ROOK;
-        _chessBoard[C8] = ES;
-        _chessBoard[D8] = ES;
-        break;
-
-    default:
-        break;
-    }
-    GAME_STATE[ENPASSANT_SQUARE] = move->_enpassantSquare;
-    GAME_STATE[TOTAL_OCCUPANCY] = move->_prevOccupancy;
-}
 
 Square findEnpassantSquare(Square PAWN_SQUARE, Square enPassantSquare)
 {
@@ -1383,26 +1180,8 @@ Square findEnpassantSquare(Square PAWN_SQUARE, Square enPassantSquare)
     return NS;
 }
 
-EnpassantMove doEnpassant( Square _pawnSrc, Square _pawnDest, Square _originDist)
-{   
-    // printf("in do enpassant");
-    // if(GAME_STATE[ENPASSANT_SQUARE]!=64){
-    //     printf("enpassant found\n");
-    // }
-
-
-    EnpassantMove move;
-
-    move._pawnDest = _pawnDest;
-    move._pawnSrc = _pawnSrc;
-    move._originDest = _originDist;
-    move._enpassantSquare = GAME_STATE[ENPASSANT_SQUARE];
-    move._preFullMove = GAME_STATE[NUMBER_FULL_MOVES];
-    move._preHalfMove = GAME_STATE[NUMBER_HALF_MOVES];
-    move._prevZorbistHash = GAME_STATE[ZORBIST_HASH];
-    move._srcPiece = _chessBoard[_pawnSrc];
-    move._side = GAME_STATE[SIDE];
-    move._prevOccupany = GAME_STATE[TOTAL_OCCUPANCY];
+void doEnpassant( Square _pawnSrc, Square _pawnDest, Square _originDist)
+{
 
     GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistSideToMove;
     GAME_STATE[ZORBIST_HASH] ^= _globalZorbistHashing._zorbistPieces[_chessBoard[_pawnSrc]][_pawnSrc];
@@ -1426,38 +1205,14 @@ EnpassantMove doEnpassant( Square _pawnSrc, Square _pawnDest, Square _originDist
     GAME_STATE[NUMBER_HALF_MOVES] = 0;
     GAME_STATE[ENPASSANT_SQUARE] = NS;
     GAME_STATE[TOTAL_OCCUPANCY] = GAME_STATE[WHITE_OCCUPANCY] | GAME_STATE[BLACK_OCCUPANCY];
-    return move;
+
 }
-
-void undoEnpassant(EnpassantMove *MOVE)
-{
-    GAME_STATE[ZORBIST_HASH] = MOVE->_prevZorbistHash;
-    GAME_STATE[NUMBER_HALF_MOVES] = MOVE->_preHalfMove;
-    GAME_STATE[NUMBER_FULL_MOVES] = MOVE->_preFullMove;
-    GAME_STATE[ENPASSANT_SQUARE] = MOVE->_enpassantSquare;
-    GAME_STATE[SIDE] = MOVE->_side;
-    GAME_STATE[TOTAL_OCCUPANCY] = MOVE->_prevOccupany;
-
-    int outerSide = GAME_STATE[SIDE] ^ 6;
-
-    GAME_STATE[(outerSide) + 5] ^= (1ULL << MOVE->_originDest);
-    GAME_STATE[((outerSide) >> 2) + WHITE_OCCUPANCY] ^= (1ULL << MOVE->_originDest);
-    GAME_STATE[GAME_STATE[SIDE] + 5] ^= (1ULL << MOVE->_pawnSrc) | (1ULL << MOVE->_pawnDest);
-    GAME_STATE[(GAME_STATE[SIDE] >> 2) + WHITE_OCCUPANCY] ^= (1ULL << MOVE->_pawnSrc) | (1ULL << MOVE->_pawnDest);
-    _chessBoard[MOVE->_pawnDest] = ES;
-    _chessBoard[MOVE->_pawnSrc] = (Pieces)(GAME_STATE[SIDE] + 5);
-    _chessBoard[MOVE->_originDest] = (Pieces)(outerSide + 5);
-}
-
 
 typedef struct
 {
-    Move _moveArray[MAX_MOVE_COUNT];
-    EnpassantMove _enpassantMoveArray[MAX_MOVE_COUNT];
-    CastleMove _castlingMoveArray[MAX_MOVE_COUNT];
+    char moves[MAX_MOVE_COUNT][6];
+    __uint64_t zorbistHashes[MAX_MOVE_COUNT];
     int index;
-    int enpassantIndex;
-    int castlingIndex;
 
 } MoveList;
 
@@ -1529,7 +1284,7 @@ void generatePieceAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
                          uint64_t _currKingBitBoard, MoveList *_moveList,
                          uint64_t (*pieceAttackFunction)(Square, uint64_t, uint64_t) , int curr, int opp)
 {
-    uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE]; 
+    uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE];
     while (_temp)
     {
         Square src = (Square)__builtin_ctzll(_temp);
@@ -1615,8 +1370,13 @@ void generatePieceAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
             default:
                 continue;
             }
+            __uint64_t copy[30];
+            int chessBoardCopy[64];
 
-            Move undo = doMove(
+            memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+            memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+            doMove(
                 src,
                 dest,
                 _promotion,
@@ -1624,13 +1384,25 @@ void generatePieceAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
                 _srcPieceOccupancy,
                 capturedColor,
                 capturedPiece, NS);
-                
+
             if (!isTheKingInCheck(curr , opp))
             {
-                _moveList->_moveArray[_moveList->index++] = undo;
+                char playMoves[6];
+
+                char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                playMoves[0]=(char)(src%8+'a');
+                playMoves[1]=(char)(src/8 +'1');
+                playMoves[2]=(char)(dest%8 +'a');
+                playMoves[3]=(char)(dest/8+'1');
+                playMoves[4]=promotionPiece[_promotion];
+
+                _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+                memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
             }
 
-            undoMove(&undo);
+            memcpy( GAME_STATE,copy, 24*sizeof(__uint64_t));
+            memcpy(  _chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
         }
     }
     GAME_STATE[ENPASSANT_SQUARE]=savedEn;
@@ -1647,14 +1419,34 @@ void generateCastlingList(MoveList *_moveList)
         {
             if (!(GAME_STATE[TOTAL_OCCUPANCY] & ((1ULL << F1) | (1ULL << G1))))
             {
-                CastleMove move = doCastle(0b00001000);
+                __uint64_t copy[30];
+                int chessBoardCopy[64];
+
+                memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+                doCastle(0b00001000);
 
                 if (!isTheKingInCheck(0,6))
                 {
-                    _moveList->_castlingMoveArray[_moveList->castlingIndex++] = move;
+                    char playMoves[6];
+
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]='e';
+                    playMoves[1]='1';
+                    playMoves[2]='g';
+                    playMoves[3]='1';
+                    playMoves[4]=promotionPiece[0];
+
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
                 }
-                undoCastle(&move);
-            }
+
+
+
+                memcpy( GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy( _chessBoard,chessBoardCopy , sizeof(_chessBoard));            }
         }
 
         if ( !(attack & GAME_STATE[WHITE_KING_OCCUPANCY]) && !(attack & (1ULL << C1)) && !(attack & (1ULL << D1))  && (GAME_STATE[CASTLING_AVAILABLE] & 0b00000100))
@@ -1663,12 +1455,29 @@ void generateCastlingList(MoveList *_moveList)
                 ((1ULL << B1) | (1ULL << C1) | (1ULL << D1))))
             {
 
-                CastleMove move = doCastle(0b00000100);
+                __uint64_t copy[30];
+                int chessBoardCopy[64];
+
+                memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+                doCastle(0b00000100);
+
                 if (!isTheKingInCheck(0,6))
                 {
-                    _moveList->_castlingMoveArray[_moveList->castlingIndex++] = move;
+                    char playMoves[6];
+
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]='e';
+                    playMoves[1]='1';
+                    playMoves[2]='c';
+                    playMoves[3]='1';
+                    playMoves[4]=promotionPiece[0];
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
                 }
-                undoCastle(&move);
+                memcpy( GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy( _chessBoard,chessBoardCopy , sizeof(_chessBoard));
             }
         }
     }else{
@@ -1677,13 +1486,29 @@ void generateCastlingList(MoveList *_moveList)
     {
         if (!(GAME_STATE[TOTAL_OCCUPANCY] & ((1ULL << F8) | (1ULL << G8))))
         {
-            CastleMove move = doCastle(0b00000010);
+            __uint64_t copy[30];
+            int chessBoardCopy[64];
+
+            memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+            memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+            doCastle(0b00000010);
             if (!isTheKingInCheck(6,0))
             {
-                _moveList->_castlingMoveArray[_moveList->castlingIndex++] = move;
+                char playMoves[6];
+
+                char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                playMoves[0]='e';
+                playMoves[1]='8';
+                playMoves[2]='g';
+                playMoves[3]='8';
+                playMoves[4]=promotionPiece[0];
+                _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
             }
-            undoCastle(&move);
-        }
+
+            memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+            memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));        }
     }
 
     if (!(attack & GAME_STATE[BLACK_KING_OCCUPANCY]) && !(attack & (1ULL << C8)) && !(attack & (1ULL << D8))  && (GAME_STATE[CASTLING_AVAILABLE] & 0b00000001))
@@ -1691,13 +1516,31 @@ void generateCastlingList(MoveList *_moveList)
         if (!(GAME_STATE[TOTAL_OCCUPANCY] &
               ((1ULL << B8) | (1ULL << C8) | (1ULL << D8))))
         {
-            CastleMove move = doCastle(0b00000001);
+            __uint64_t copy[30];
+            int chessBoardCopy[64];
+
+            memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+            memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+            doCastle(0b00000001);
             if (!isTheKingInCheck(6,0))
             {
-                _moveList->_castlingMoveArray[_moveList->castlingIndex++] = move;
+                char playMoves[6];
+
+                char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                playMoves[0]='e';
+                playMoves[1]='8';
+                playMoves[2]='c';
+                playMoves[3]='8';
+                playMoves[4]=promotionPiece[0];
+                _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
             }
-            undoCastle(&move);
-        }
+
+
+            memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+            memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));        }
     }
     }
 
@@ -1740,7 +1583,7 @@ void generateKingAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
                          uint64_t _srcColorOccupancy, int _promotion,
                          uint64_t _currKingBitBoard, MoveList *_moveList , int curr, int opp)
 {
-    uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE]; 
+    uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE];
     while (_temp)
     {
         Square src = (Square)__builtin_ctzll(_temp);
@@ -1826,8 +1669,12 @@ void generateKingAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
             default:
                 continue;
             }
+            __uint64_t copy[30];
+            int chessBoardCopy[64];
 
-            Move undo = doMove(
+            memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+            memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+            doMove(
                 src,
                 dest,
                 _promotion,
@@ -1835,13 +1682,26 @@ void generateKingAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
                 _srcPieceOccupancy,
                 capturedColor,
                 capturedPiece, NS);
-                
+
             if (!isTheKingInCheck(curr , opp))
             {
-                _moveList->_moveArray[_moveList->index++] = undo;
+                char playMoves[6];
+
+                char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                playMoves[0]=(char)(src%8+'a');
+                playMoves[1]=(char)(src/8 +'1');
+                playMoves[2]=(char)(dest%8 +'a');
+                playMoves[3]=(char)(dest/8+'1');
+                playMoves[4]=promotionPiece[_promotion];
+
+                _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+                memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
             }
 
-            undoMove(&undo);
+
+            memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+            memcpy(_chessBoard,chessBoardCopy , 64*sizeof(int));
+
         }
     }
     GAME_STATE[ENPASSANT_SQUARE]=savedEn;
@@ -1897,21 +1757,39 @@ static inline void generateEnpassantMoves(MoveList *_moveList)
 
     int curr = GAME_STATE[SIDE] == 0 ? 0 : 6;
     int opp = GAME_STATE[SIDE] == 0 ? 6 : 0;
-    uint64_t pawns = GAME_STATE[curr + 5]; 
+    uint64_t pawns = GAME_STATE[curr + 5];
     while (pawns)
     {
         int index = __builtin_ctzll(pawns);
         pawns &= pawns - 1;
 
-        Square epSquare = findEnpassantSquare((Square)index, enPassant);  // pass snapshot
+        Square epSquare = findEnpassantSquare((Square)index, enPassant);
         if (epSquare != NS)
         {
-            EnpassantMove move = doEnpassant((Square)index, enPassant, epSquare);
+            __uint64_t copy[30];
+            int chessBoardCopy[64];
+
+            memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+            memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+            doEnpassant((Square)index, enPassant, epSquare);
             if (!isTheKingInCheck(curr, opp))
             {
-                _moveList->_enpassantMoveArray[_moveList->enpassantIndex++] = move;
+                char playMoves[6];
+
+                char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                playMoves[0]=(char)(index%8+'a');
+                playMoves[1]=(char)(index/8 +'1');
+                playMoves[2]=(char)(enPassant%8 +'a');
+                playMoves[3]=(char)(enPassant/8+'1');
+                playMoves[4]=promotionPiece[0];
+
+                _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+                memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
             }
-            undoEnpassant(&move);
+
+            memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+            memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
         }
     }
 }
@@ -1921,7 +1799,7 @@ static inline void generatePawnMovements(MoveList *_moveList)
     uint64_t savedEq = GAME_STATE[ENPASSANT_SQUARE];
         generateEnpassantMoves(_moveList);
 
-    if (GAME_STATE[SIDE] == 0) 
+    if (GAME_STATE[SIDE] == 0)
     {
         uint64_t pawns = GAME_STATE[WHITE_PAWN_OCCUPANCY];
 
@@ -1931,40 +1809,69 @@ static inline void generatePawnMovements(MoveList *_moveList)
             pawns &= (pawns - 1);
 
 
-            // int epSquare = findEnpassantSquare((Square)index);
-            // if (epSquare != NS)
-            // {
-            //     EnpassantMove move = doEnpassant((Square)index, (Square)GAME_STATE[ENPASSANT_SQUARE], (Square)epSquare);
-
-            //     undoEnpassant(&move);
-            // }
-
-
             if (_chessBoard[index + 8] == ES && index < 48)
             {
-                Move move = doMove(index, index + 8, 0,
+                __uint64_t copy[30];
+                int chessBoardCopy[64];
+
+                memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+                doMove(index, index + 8, 0,
                                    WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
                                    NO_PIECE, NO_PIECE, NS);
                 if (!isTheKingInCheck(0, 6))
-                    _moveList->_moveArray[_moveList->index++] = move;
-                undoMove(&move);
+                {
+                    char playMoves[6];
+
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]=(char)(index%8+'a');
+                    playMoves[1]=(char)(index/8 +'1');
+                    playMoves[2]=(char)((index+8)%8 +'a');
+                    playMoves[3]=(char)((index+8)/8+'1');
+                    playMoves[4]=promotionPiece[0];
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
+                }
+
+
+                memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy( _chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
+
             }
 
 
             if (index > 7 && index < 16 &&
                 _chessBoard[index + 8] == ES && _chessBoard[index + 16] == ES)
             {
-                Move move = doMove(index, index + 16, 0,
+                __uint64_t copy[30];
+                int chessBoardCopy[64];
+
+                memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+                doMove(index, index + 16, 0,
                                    WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
                                    NO_PIECE, NO_PIECE, index + 8);
 
                 if (!isTheKingInCheck(0, 6))
                 {
-                    _moveList->_moveArray[_moveList->index++] = move;
+                    char playMoves[6];
 
-
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]=(char)(index%8+'a');
+                    playMoves[1]=(char)(index/8 +'1');
+                    playMoves[2]=(char)((index+16)%8 +'a');
+                    playMoves[3]=(char)((index+16)/8+'1');
+                    playMoves[4]=promotionPiece[0];
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
                 }
-                undoMove(&move);
+
+                memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
+
             }
 
 
@@ -1972,24 +1879,46 @@ static inline void generatePawnMovements(MoveList *_moveList)
             {
                 for (int prom = 1; prom <= 4; prom++)
                 {
-                    Move move = doMove(index, index + 8, prom,
+                    __uint64_t copy[30];
+                    int chessBoardCopy[64];
+
+                    memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                    memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+                    doMove(index, index + 8, prom,
                                        WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
                                        NO_PIECE, NO_PIECE, NS);
                     if (!isTheKingInCheck(0, 6))
-                        _moveList->_moveArray[_moveList->index++] = move;
-                    undoMove(&move);
+                    {
+                        char playMoves[6];
+
+                        char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                        playMoves[0]=(char)(index%8+'a');
+                        playMoves[1]=(char)(index/8 +'1');
+                        playMoves[2]=(char)((index+8)%8 +'a');
+                        playMoves[3]=(char)((index+8)/8+'1');
+                        playMoves[4]=promotionPiece[prom];
+                        _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                        memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
+                    }
+
+
+
+                    memcpy( GAME_STATE,copy, 24*sizeof(__uint64_t));
+                    memcpy( _chessBoard,chessBoardCopy , sizeof(_chessBoard));
                 }
             }
 
 
-            if (index + 8 < 56)   
+            if (index + 8 < 56)
             {
                 generatePieceAttack(1ULL << index, WHITE_PAWN_OCCUPANCY,
                                     WHITE_OCCUPANCY, 0,
                                     GAME_STATE[WHITE_KING_OCCUPANCY],
                                     _moveList, &getWhitePawnAttack, 0, 6);
             }
-            else  
+            else
             {
                 for (int prom = 1; prom <= 4; prom++)
                 {
@@ -2001,7 +1930,7 @@ static inline void generatePawnMovements(MoveList *_moveList)
             }
         }
     }
-    else  
+    else
     {
         uint64_t pawns = GAME_STATE[BLACK_PAWN_OCCUPANCY];
 
@@ -2012,30 +1941,71 @@ static inline void generatePawnMovements(MoveList *_moveList)
 
 
 
-            if (index >= 8 && _chessBoard[index - 8] == ES)
+            if (index >= 16 && _chessBoard[index - 8] == ES)
             {
-                Move move = doMove(index, index - 8, 0,
+                    __uint64_t copy[30];
+                    int chessBoardCopy[64];
+
+                    memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                    memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+                doMove(index, index - 8, 0,
                                    BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
                                    NO_PIECE, NO_PIECE, NS);
 
 
                 if (!isTheKingInCheck(6, 0))
-                    _moveList->_moveArray[_moveList->index++] = move;
-                undoMove(&move);
+                {
+                    char playMoves[6];
+
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]=(char)(index%8+'a');
+                    playMoves[1]=(char)(index/8 +'1');
+                    playMoves[2]=(char)((index-8)%8 +'a');
+                    playMoves[3]=(char)((index-8)/8+'1');
+                    playMoves[4]=promotionPiece[0];
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
+                }
+
+                memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
             }
 
 
             if (index >= 48 && index <= 55 &&
                 _chessBoard[index - 8] == ES && _chessBoard[index - 16] == ES)
             {
-                Move move = doMove(index, index - 16, 0,
+                    __uint64_t copy[30];
+                    int chessBoardCopy[64];
+
+                    memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                    memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+                doMove(index, index - 16, 0,
                                    BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
                                    NO_PIECE, NO_PIECE, index - 8);
                 if (!isTheKingInCheck(6, 0))
-                    {
-                        _moveList->_moveArray[_moveList->index++] = move;
-                    }
-                undoMove(&move);
+                {
+                    char playMoves[6];
+                    int src = index;
+                    int dest = index-16;
+                    char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                    playMoves[0]=(char)(src%8+'a');
+                    playMoves[1]=(char)(src/8 +'1');
+                    playMoves[2]=(char)(dest%8 +'a');
+                    playMoves[3]=(char)(dest/8+'1');
+                    playMoves[4]=promotionPiece[0];
+                    _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                    memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
+                }
+
+
+                memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+                memcpy( _chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
             }
 
 
@@ -2043,24 +2013,47 @@ static inline void generatePawnMovements(MoveList *_moveList)
             {
                 for (int prom = 1; prom <= 4; prom++)
                 {
-                    Move move = doMove(index, index - 8, prom,
+                    __uint64_t copy[30];
+                    int chessBoardCopy[64];
+
+                    memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+                    memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+                    doMove(index, index - 8, prom,
                                        BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
                                        NO_PIECE, NO_PIECE, NS);
-                    if (!isTheKingInCheck(6, 0))
-                        _moveList->_moveArray[_moveList->index++] = move;
-                    undoMove(&move);
+                    if (!isTheKingInCheck(6, 0)){
+                        char playMoves[6];
+                        int src = index;
+                        int dest= index-8;
+                        char promotionPiece[5]={'\0', 'q','r' ,'b' ,'n'};
+                        playMoves[0]=(char)(src%8+'a');
+                        playMoves[1]=(char)(src/8 +'1');
+                        playMoves[2]=(char)(dest%8 +'a');
+                        playMoves[3]=(char)(dest/8+'1');
+                        playMoves[4]=promotionPiece[prom];
+                        _moveList->zorbistHashes[_moveList->index]=GAME_STATE[ZORBIST_HASH];
+
+                        memcpy(_moveList->moves[_moveList->index++] ,playMoves,6  ) ;
+                    }
+
+
+
+                    memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+                    memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
+
                 }
             }
 
 
-            if (index - 8 >= 8)   
+            if (index - 8 >= 8)
             {
                 generatePieceAttack(1ULL << index, BLACK_PAWN_OCCUPANCY,
                                     BLACK_OCCUPANCY, 0,
                                     GAME_STATE[BLACK_KING_OCCUPANCY],
                                     _moveList, &getBlackPawnAttack, 6, 0);
             }
-            else  
+            else
             {
                 for (int prom = 1; prom <= 4; prom++)
                 {
@@ -2077,7 +2070,7 @@ static inline void generatePawnMovements(MoveList *_moveList)
 
 void generateMoveList(MoveList *_moves)
 {
-        uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE];   
+        uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE];
 
     if (GAME_STATE[SIDE] == 0)
     {
@@ -2101,8 +2094,10 @@ void generateMoveList(MoveList *_moves)
 
 }
 
+void makeMove(char* move);
+
 uint64_t perft(int depth)
-{           
+{
 
     if (depth == 0)
         return 1;
@@ -2112,52 +2107,59 @@ uint64_t perft(int depth)
 
     uint64_t nodes = 0;
 
-    // Normal moves
+
     for (int i = 0; i < moves.index; i++)
     {
-        Move *move = &moves._moveArray[i];
+        __uint64_t copy[30];
+        int chessBoardCopy[64];
 
-        doMove(move->_src,
-               move->_dest,
-               move->_promotion,
-               move->_colorOccupancySRC,
-               move->_pieceOccupancySRC,
-               move->_colorOccupancyDEST,
-               move->_pieceOccupancyDEST, move->_newEnpassant);
+        memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+        memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
+
+        makeMove(moves.moves[i]);
+
 
         nodes += perft(depth - 1);
 
-        undoMove(move);
-
+        memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+        memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
     }
 
-    for (int i = 0; i < moves.enpassantIndex; i++)
+
+    return nodes;
+}
+
+
+uint64_t perftBulk(int depth)
+{
+
+    if (depth == 0)
+        return 1;
+
+    MoveList moves = {0};
+    generateMoveList(&moves);
+    if (depth == 1)
+        return moves.index;
+    uint64_t nodes = 0;
+
+
+    for (int i = 0; i < moves.index; i++)
     {
-        EnpassantMove *move = &moves._enpassantMoveArray[i];
+        __uint64_t copy[30];
+        int chessBoardCopy[64];
 
-        
-        doEnpassant((Square)move->_pawnSrc,
-                    (Square)move->_pawnDest,
-                    (Square)move->_originDest);
+        memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+        memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
 
-        nodes += perft(depth - 1);
+        makeMove(moves.moves[i]);
 
-        undoEnpassant(move);
 
+        nodes += perftBulk(depth - 1);
+
+        memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+        memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
     }
 
-    // Castling
-    for (int i = 0; i < moves.castlingIndex; i++)
-    {
-        CastleMove *move = &moves._castlingMoveArray[i];
-
-        doCastle(move->_currState);
-
-        nodes += perft(depth - 1);
-
-        undoCastle(move);
-
-    }
 
     return nodes;
 }
@@ -2175,150 +2177,74 @@ uint64_t divide(int depth)
 
     for (int i = 0; i < moves.index; i++)
     {
-        Move *move = &moves._moveArray[i];
+        __uint64_t copy[30];
+        int chessBoardCopy[64];
 
-        doMove(move->_src,
-               move->_dest,
-               move->_promotion,
-               move->_colorOccupancySRC,
-               move->_pieceOccupancySRC,
-               move->_colorOccupancyDEST,
-               move->_pieceOccupancyDEST, move->_newEnpassant);
+        memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+        memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
 
-        uint64_t nodes = perft(depth - 1);
+        makeMove(moves.moves[i]);
 
-        undoMove(move);
 
-        printf("%c%d%c%d : %llu\n",
-               'a' + move->_src % 8,
-               1 + move->_src / 8,
-               'a' + move->_dest % 8,
-               1 + move->_dest / 8,
+        __uint64_t nodes = perft(depth - 1);
+
+        memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+        memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
+
+        printf("%s : %llu\n",moves.moves[i] ,
                (unsigned long long)nodes);
 
         total += nodes;
     }
 
-    // En passant
-    for (int i = 0; i < moves.enpassantIndex; i++)
-    {
-        EnpassantMove *move = &moves._enpassantMoveArray[i];
 
-        doEnpassant(move->_pawnSrc,
-                    move->_pawnDest,
-                    move->_originDest);
-
-        uint64_t nodes = perft(depth - 1);
-
-        undoEnpassant(move);
-
-        printf("%c%d%c%d ep : %llu\n",
-               'a' + move->_pawnSrc % 8,
-               1 + move->_pawnSrc / 8,
-               'a' + move->_pawnDest % 8,
-               1 + move->_pawnDest / 8,
-               (unsigned long long)nodes);
-
-        total += nodes;
-    }
-
-    for (int i = 0; i < moves.castlingIndex; i++)
-    {
-        CastleMove *move = &moves._castlingMoveArray[i];
-
-        doCastle(move->_currState);
-
-        uint64_t nodes = perft(depth - 1);
-
-        undoCastle(move);
-
-        switch (move->_currState)
-        {
-        case 0b00001000:
-            printf("e1g1 : %llu\n", (unsigned long long)nodes);
-            break;
-        case 0b00000100:
-            printf("e1c1 : %llu\n", (unsigned long long)nodes);
-            break;
-        case 0b00000010:
-            printf("e8g8 : %llu\n", (unsigned long long)nodes);
-            break;
-        case 0b00000001:
-            printf("e8c8 : %llu\n", (unsigned long long)nodes);
-            break;
-        }
-
-        total += nodes;
-    }
 
     printf("\nTotal Nodes: %llu\n", (unsigned long long)total);
 
     return total;
 }
 
-uint64_t perftBULK(int depth)
-{           
-
-    if (depth == 1){
-        MoveList moves = {0};
-        generateMoveList(&moves);
-        return moves.index+moves.enpassantIndex+moves.castlingIndex;
-
-    }
+uint64_t divideBulk(int depth)
+{
+    if (depth <= 0)
+        return 1;
 
     MoveList moves = {0};
     generateMoveList(&moves);
 
-    uint64_t nodes = 0;
 
-    // Normal moves
+    uint64_t total = 0;
+
+
     for (int i = 0; i < moves.index; i++)
     {
-        Move *move = &moves._moveArray[i];
+        __uint64_t copy[30];
+        int chessBoardCopy[64];
 
-        doMove(move->_src,
-               move->_dest,
-               move->_promotion,
-               move->_colorOccupancySRC,
-               move->_pieceOccupancySRC,
-               move->_colorOccupancyDEST,
-               move->_pieceOccupancyDEST, move->_newEnpassant);
+        memcpy(copy , GAME_STATE, 24*sizeof(__uint64_t));
+        memcpy(chessBoardCopy, _chessBoard , sizeof(_chessBoard));
 
-        nodes += perftBULK(depth - 1);
+        makeMove(moves.moves[i]);
 
-        undoMove(move);
 
+        __uint64_t nodes = perftBulk(depth - 1);
+
+        memcpy(GAME_STATE,copy, 24*sizeof(__uint64_t));
+        memcpy(_chessBoard,chessBoardCopy , sizeof(_chessBoard));
+
+
+        printf("%s : %llu\n",moves.moves[i] ,
+               (unsigned long long)nodes);
+
+        total += nodes;
     }
 
-    for (int i = 0; i < moves.enpassantIndex; i++)
-    {
-        EnpassantMove *move = &moves._enpassantMoveArray[i];
 
-        
-        doEnpassant((Square)move->_pawnSrc,
-                    (Square)move->_pawnDest,
-                    (Square)move->_originDest);
 
-        nodes += perftBULK(depth - 1);
+    printf("\nTotal Nodes: %llu\n", (unsigned long long)total);
 
-        undoEnpassant(move);
-
-    }
-
-    // Castling
-    for (int i = 0; i < moves.castlingIndex; i++)
-    {
-        CastleMove *move = &moves._castlingMoveArray[i];
-
-        doCastle(move->_currState);
-
-        nodes += perftBULK(depth - 1);
-
-        undoCastle(move);
-
-    }
-
-    return nodes;
+    return total;
 }
 
 // -------------------------------------------
@@ -2391,7 +2317,6 @@ uint64_t evaluateThisPosition()
 
 void initializeHelperFunc(){
     pieceInitializer();
-        piecePuter(~(0ULL), ES);
 
     piecePuter(GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN);
     piecePuter(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK);
@@ -2408,7 +2333,6 @@ void initializeHelperFunc(){
     piecePuter(~(GAME_STATE[TOTAL_OCCUPANCY]), ES);
 }
 
-
 void initializer()
 {
     emptyInitializationHelper();
@@ -2416,3 +2340,376 @@ void initializer()
     initializeHelperFunc();
 }
 
+
+
+
+
+// -----------------------------------------------
+// --------------- MAKE MOVE ---------------------
+// -----------------------------------------------
+
+//works with only legal, no legality checking
+
+
+void makeMove(char* move)
+{
+    bool isPromotion = (move[4] != '\0');
+    char promotion = move[4];
+
+    Square src = ((move[1] - '1') * 8) + (move[0] - 'a');
+    Square dest = ((move[3] - '1') * 8) + (move[2] - 'a');
+
+    bool isEnpassant = false;
+    bool isCastle = false;
+
+
+    Square oldEnpassantSquare = (Square)GAME_STATE[ENPASSANT_SQUARE];
+
+    Pieces movingPiece = _chessBoard[src];
+    Pieces capturedPiece = _chessBoard[dest];
+
+    if ((movingPiece == WHITE_KING || movingPiece == BLACK_KING) &&
+        ((src == E1 && (dest == G1 || dest == C1)) ||
+         (src == E8 && (dest == G8 || dest == C8))))
+    {
+        isCastle = true;
+    }
+
+
+    GAME_STATE[ENPASSANT_SQUARE] = NS;
+
+    if (movingPiece == WHITE_PAWN &&
+        dest == oldEnpassantSquare &&
+        capturedPiece == ES &&
+        src >= A5 && src <= H5)
+    {
+        isEnpassant = true;
+    }
+
+    if (movingPiece == BLACK_PAWN &&
+        dest == oldEnpassantSquare &&
+        capturedPiece == ES &&
+        src >= A4 && src <= H4)
+    {
+        isEnpassant = true;
+    }
+
+
+    if (movingPiece == BLACK_PAWN &&
+        src >= A7 && src <= H7 &&
+        dest >= A5 && dest <= H5)
+    {
+        GAME_STATE[ENPASSANT_SQUARE] = (Square)(src - 8);
+    }
+    else if (movingPiece == WHITE_PAWN &&
+             src >= A2 && src <= H2 &&
+             dest >= A4 && dest <= H4)
+    {
+        GAME_STATE[ENPASSANT_SQUARE] = (Square)(src + 8);
+    }
+
+    switch (movingPiece)
+    {
+        case WHITE_PAWN:
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_KNIGHT:
+            GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_BISHOP:
+            GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_ROOK:
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+
+            if (src == A1)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
+
+            if (src == H1)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
+            break;
+
+        case WHITE_QUEEN:
+            GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_KING:
+            GAME_STATE[WHITE_KING_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_KING_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[CASTLING_AVAILABLE] &= 0b0011;
+            break;
+
+        case BLACK_PAWN:
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_KNIGHT:
+            GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_BISHOP:
+            GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_ROOK:
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+
+            if (src == A8)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
+
+            if (src == H8)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
+            break;
+
+        case BLACK_QUEEN:
+            GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_KING:
+            GAME_STATE[BLACK_KING_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_KING_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[CASTLING_AVAILABLE] &= 0b1100;
+            break;
+
+        default:
+            break;
+    }
+
+    switch (capturedPiece)
+    {
+        case WHITE_PAWN:
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_KNIGHT:
+            GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_BISHOP:
+            GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case WHITE_ROOK:
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+
+            if (dest == A1)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
+
+            if (dest == H1)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
+            break;
+
+        case WHITE_QUEEN:
+            GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_PAWN:
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_KNIGHT:
+            GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_BISHOP:
+            GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        case BLACK_ROOK:
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+
+            if (dest == A8)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
+
+            if (dest == H8)
+                GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
+            break;
+
+        case BLACK_QUEEN:
+            GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+            break;
+
+        default:
+            break;
+    }
+
+    if (isEnpassant)
+    {
+        Square capturedPawnSquare;
+
+        if (movingPiece == WHITE_PAWN)
+            capturedPawnSquare = (Square)(dest - 8);
+        else
+            capturedPawnSquare = (Square)(dest + 8);
+
+        if (movingPiece == WHITE_PAWN)
+        {
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+        }
+        else
+        {
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+        }
+
+        _chessBoard[capturedPawnSquare] = ES;
+    }
+
+    _chessBoard[src] = ES;
+    _chessBoard[dest] = movingPiece;
+
+    if (isPromotion)
+    {
+        if (movingPiece == WHITE_PAWN)
+        {
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
+
+            switch (promotion)
+            {
+                case 'q':
+                    _chessBoard[dest] = WHITE_QUEEN;
+                    GAME_STATE[WHITE_QUEEN_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'r':
+                    _chessBoard[dest] = WHITE_ROOK;
+                    GAME_STATE[WHITE_ROOK_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'b':
+                    _chessBoard[dest] = WHITE_BISHOP;
+                    GAME_STATE[WHITE_BISHOP_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'n':
+                    _chessBoard[dest] = WHITE_KNIGHT;
+                    GAME_STATE[WHITE_KNIGHT_OCCUPANCY] |= (1ULL << dest);
+                    break;
+            }
+        }
+        else if (movingPiece == BLACK_PAWN)
+        {
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
+
+            switch (promotion)
+            {
+                case 'q':
+                    _chessBoard[dest] = BLACK_QUEEN;
+                    GAME_STATE[BLACK_QUEEN_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'r':
+                    _chessBoard[dest] = BLACK_ROOK;
+                    GAME_STATE[BLACK_ROOK_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'b':
+                    _chessBoard[dest] = BLACK_BISHOP;
+                    GAME_STATE[BLACK_BISHOP_OCCUPANCY] |= (1ULL << dest);
+                    break;
+
+                case 'n':
+                    _chessBoard[dest] = BLACK_KNIGHT;
+                    GAME_STATE[BLACK_KNIGHT_OCCUPANCY] |= (1ULL << dest);
+                    break;
+            }
+        }
+    }
+
+    if (isCastle)
+    {
+        if (src == E1 && dest == G1)
+        {
+            _chessBoard[H1] = ES;
+            _chessBoard[F1] = WHITE_ROOK;
+
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << H1);
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << F1);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << H1);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << F1);
+        }
+        else if (src == E1 && dest == C1)
+        {
+            _chessBoard[A1] = ES;
+            _chessBoard[D1] = WHITE_ROOK;
+
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << A1);
+            GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << D1);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << A1);
+            GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << D1);
+        }
+        else if (src == E8 && dest == G8)
+        {
+            _chessBoard[H8] = ES;
+            _chessBoard[F8] = BLACK_ROOK;
+
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << H8);
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << F8);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << H8);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << F8);
+        }
+        else if (src == E8 && dest == C8)
+        {
+            _chessBoard[A8] = ES;
+            _chessBoard[D8] = BLACK_ROOK;
+
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << A8);
+            GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << D8);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << A8);
+            GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << D8);
+        }
+    }
+
+    GAME_STATE[SIDE] ^= 6;
+    GAME_STATE[TOTAL_OCCUPANCY] =
+        GAME_STATE[WHITE_OCCUPANCY] |
+        GAME_STATE[BLACK_OCCUPANCY];
+}

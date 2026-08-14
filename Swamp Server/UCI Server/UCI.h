@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
-
+#include "../engine/Locks.h"
 #include "../Board Representation/GameStateMoveGeneration.h"
 
 #define UCI_LINE_SIZE 4096
@@ -23,7 +23,8 @@ typedef enum
     CMD_GO,
     CMD_STOP,
     CMD_QUIT,
-    CMD_UNKNOWN
+    CMD_UNKNOWN,
+    CMD_PRINTBOARD
 
 } UCI_COMMAND;
 
@@ -32,7 +33,7 @@ typedef enum
 typedef struct
 {
     bool perft;
-    int depth;
+    int perft_level;
 
     bool depth;
     int depthValue;
@@ -66,6 +67,7 @@ typedef struct
 typedef struct
 {
     bool startpos;
+
 
     bool hasFen;
     char fen[MAX_FEN_SIZE];
@@ -126,13 +128,23 @@ static bool parseGo(char *line, GO_COMMAND *go)
                 return false;
 
             go->depth = true;
-            go->depthValue = atoi(token);
-        }
+            go->depthValue = strtoull(token, NULL, 10);
 
+        }
+        
+        else if(strcasecmp(token , "perft")==0){
+            token = strtok(NULL, " \t\r\n");
+
+            if (token == NULL)
+                return false;
+
+            go->perft = true;
+            go->perft_level = strtoull(token, NULL, 10);
+        }
+        
         else if (strcasecmp(token, "movetime") == 0)
         {
             token = strtok(NULL, " \t\r\n");
-
             if (token == NULL)
                 return false;
 
@@ -151,7 +163,6 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->wtimeValue = strtoull(token, NULL, 10);
         }
 
-
         else if (strcasecmp(token, "btime") == 0)
         {
             token = strtok(NULL, " \t\r\n");
@@ -162,9 +173,6 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->btime = true;
             go->btimeValue = strtoull(token, NULL, 10);
         }
-
-
-
 
         else if (strcasecmp(token, "winc") == 0)
         {
@@ -177,7 +185,6 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->wincValue = strtoull(token, NULL, 10);
         }
 
-
         else if (strcasecmp(token, "binc") == 0)
         {
             token = strtok(NULL, " \t\r\n");
@@ -188,6 +195,7 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->binc = true;
             go->bincValue = strtoull(token, NULL, 10);
         }
+
 
     }
 
@@ -224,45 +232,72 @@ static bool parsePosition(char *line, POSITION_COMMAND *position)
         token = strtok(NULL, " \t\r\n");
     }
 
-
     else if (strcasecmp(token, "fen") == 0)
     {
         position->hasFen = true;
 
         position->fen[0] = '\0';
 
-        /*
-         * FEN has exactly 6 fields:
-         *
-         * 1. Piece placement
-         * 2. Side to move
-         * 3. Castling rights
-         * 4. En passant square
-         * 5. Halfmove clock
-         * 6. Fullmove number
-         */
-
-        for (int i = 0; i < 6; i++)
+        for(int i=0;i<6; i++)
         {
             token = strtok(NULL, " \t\r\n");
 
             if (token == NULL)
                 return false;
 
-            if (i != 0)
-                strcat(position->fen, " ");
+            strcat(position->fen , token);
+            strcat(position->fen , " ");
 
-            strcat(position->fen, token);
+            // token[strcspn(position->fen , "\0")]=' ';
+
+
         }
 
-        token = strtok(NULL, " \t\r\n");
+
+        position->fen[strlen(position->fen)]='\0';
+        // for(int i=0;i<60;i++){
+        //     printf("-->%d %c\n",i, position->fen[i]);
+        // }
+        // printf("token i-> %d %s\n",strlen(position->fen),position->fen);
+
+        // memcpy(position->fen , token,128);
+
+
+        
     }
 
-    else
+    else if(strcasecmp(token , "moves")==0)
     {
-        return false;
-    }
+        token = strtok(NULL, " \t\r\n");
 
+        while (token != NULL)
+        {
+            if (position->moveCount >= MAX_MOVES)
+                return false;
+
+
+
+            size_t length = strlen(token);
+
+            if (length < 4 || length > 5)
+                return false;
+
+            strcpy(
+                position->moves[position->moveCount],
+                token
+            );
+
+            position->moveCount++;
+
+            token = strtok(NULL, " \t\r\n");
+        }
+    }
+    // else
+    // {
+    //     return false;
+    // }
+
+    token = strtok(NULL, " \t\r\n");
 
     // ========================================================
     // MOVES
@@ -277,12 +312,7 @@ static bool parsePosition(char *line, POSITION_COMMAND *position)
             if (position->moveCount >= MAX_MOVES)
                 return false;
 
-            /*
-             * Normal UCI move is 4 or 5 characters:
-             *
-             * e2e4
-             * e7e8q
-             */
+
 
             size_t length = strlen(token);
 
@@ -304,7 +334,6 @@ static bool parsePosition(char *line, POSITION_COMMAND *position)
     return true;
 }
 
-
 static bool parseUCI(char *line, UCI_COMMAND_DATA *command)
 {
     memset(command, 0, sizeof(UCI_COMMAND_DATA));
@@ -322,6 +351,11 @@ static bool parseUCI(char *line, UCI_COMMAND_DATA *command)
         return false;
     }       
     
+    if (strcasecmp(token, "printboard") == 0)
+    {
+        command->type = CMD_PRINTBOARD;
+        return true;
+    }
 
 
     if (strcasecmp(token, "uci") == 0)
@@ -385,24 +419,36 @@ static bool parseUCI(char *line, UCI_COMMAND_DATA *command)
     return false;
 }
 
-void UCI_SERVER(void)
+void* UCI_SERVER(void* arg)
 {
+    pthread_detach(pthread_self());
+
     char line[UCI_LINE_SIZE];
 
     UCI_COMMAND_DATA command;
 
 
+    
     while (fgets(line, sizeof(line), stdin))
     {
+        
         if (!parseUCI(line, &command))
         {
+            printf("invalid input\n");
             continue;
         }
 
 
         switch (command.type)
         {
+            case CMD_PRINTBOARD:
+                pthread_mutex_lock(&inputLock);
+                CMD_CASE=CMD_TYPE_PRINTBOARD;
 
+                pthread_cond_broadcast(&inputCond);
+                pthread_mutex_unlock(&inputLock);
+
+                break;
             case CMD_UCI:
 
                 printf("id name Swamp\n");
@@ -413,6 +459,12 @@ void UCI_SERVER(void)
                 break;
 
             case CMD_ISREADY:
+                pthread_mutex_lock(&inputLock);
+                
+                CMD_CASE=CMD_TYPE_ISREADY;
+
+                pthread_cond_broadcast(&inputCond);
+                pthread_mutex_unlock(&inputLock);
 
                 printf("readyok\n");
                 fflush(stdout);
@@ -422,7 +474,15 @@ void UCI_SERVER(void)
 
 
             case CMD_UCINEWGAME:
+                pthread_mutex_lock(&inputLock);
+                
+                CMD_CASE=CMD_TYPE_ISREADY;
 
+                pthread_cond_broadcast(&inputCond);
+                pthread_mutex_unlock(&inputLock);
+
+                printf("readyok\n");
+                fflush(stdout);
 
                 break;
 
@@ -436,30 +496,45 @@ void UCI_SERVER(void)
 
                 else if (command.position.hasFen)
                 {
+                    pthread_mutex_lock(&inputLock);
+                    
+                    CMD_CASE=CMD_TYPE_FENPOSITION;
 
+                    // printf("--> %s\n", command.position.fen);
+                    memcpy(retValueOfComputation ,command.position.fen, strlen(command.position.fen)+1);
+                    pthread_cond_broadcast(&inputCond);
+                    pthread_mutex_unlock(&inputLock);
                 }
 
 
                 for (int i = 0; i < command.position.moveCount; i++)
-                {
+                {   
+                    pthread_mutex_lock(&inputLock);
+                    memcpy(retValueOfComputation ,command.position.moves[i], strlen(command.position.moves[i])+1);
+                    CMD_CASE=CMD_TYPE_MAKEMOVE;
+                    pthread_cond_broadcast(&inputCond);
+                    pthread_mutex_unlock(&inputLock);
 
                 }
-
+                printf("readyok\n");
                 break;
 
             case CMD_GO:
 
                 //printGoCommand(&command.go);
 
+                if (command.go.perft)
+                {
+                    pthread_mutex_lock(&inputLock);
+                    memcpy(retValueOfComputation, &command.go.perft_level , sizeof(command.go.perft_level));
+                    // divide(command.go.depthValue);
+                    
+                    CMD_CASE=CMD_TYPE_PERFT;
+                    pthread_cond_broadcast(&inputCond);
+                    pthread_mutex_unlock(&inputLock);
 
-                /*
-                 * Example:
-                 *
-                 * if (command.go.depth)
-                 * {
-                 *     searchDepth(command.go.depthValue);
-                 * }
-                 *
+                }
+                 /*
                  * else if (command.go.movetime)
                  * {
                  *     searchTime(command.go.movetimeValue);
@@ -486,4 +561,6 @@ void UCI_SERVER(void)
                 break;
         }
     }
+
+    
 }
