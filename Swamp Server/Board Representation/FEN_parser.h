@@ -30,7 +30,7 @@ typedef struct FEN_STRING
     char enpassantTargetSquare[5];
     char halfmoveClock[10];
     char fullMoveClock[10];
-    
+
 } FEN_STRING;
 
 
@@ -66,25 +66,25 @@ int initializeNewGameFromString(char *string)
             break;
         case 2:
             memcpy(_string1.castlingAbility , token , strlen(token)+1);
-            break; 
+            break;
         case 3:
             memcpy(_string1.enpassantTargetSquare , token , strlen(token)+1);
-            break; 
+            break;
         case 4:
             memcpy(_string1.halfmoveClock , token , strlen(token)+1);
-            break; 
+            break;
         case 5:
             memcpy(_string1.fullMoveClock , token , strlen(token)+1);
-            break; 
+            break;
         default:
             break;
         }
         token=strtok(NULL , " \t\r\n" );
-    }   
+    }
 
     // printf("%s\n%c\n%s\n%s\n%s\n%s\n",_string1.piecePlacement ,_string1.sideTOMove,_string1.castlingAbility ,_string1.enpassantTargetSquare,_string1.halfmoveClock ,_string1.fullMoveClock);
 
-    
+
     _globalZorbistHashing = generateZorbistNumbers();
 
     GAME_STATE[EVALUATION] = 1000;
@@ -221,11 +221,11 @@ int initializeNewGameFromString(char *string)
         return -1;
 
     }
-        
+
 
     GAME_STATE[SIDE] = (_string1.sideTOMove == 'w') ? 0 : 6;
 
-    
+
 
     if (strcmp(_string1.castlingAbility , "-")==0)
     {
@@ -267,7 +267,7 @@ int initializeNewGameFromString(char *string)
 
     if (strcmp(_string1.enpassantTargetSquare ,"-")==0)
     {
-        GAME_STATE[ENPASSANT_SQUARE] = ES;
+        GAME_STATE[ENPASSANT_SQUARE] = NS;
 
     }
     else
@@ -295,12 +295,12 @@ int initializeNewGameFromString(char *string)
                 printf("problem 6");
 
         return -1;
-    }    
+    }
 
     GAME_STATE[NUMBER_HALF_MOVES] = value;
-    
 
-    
+
+
     value = strtol(_string1.fullMoveClock, &end, 10);
 
     if (end == _string1.fullMoveClock) {
@@ -313,7 +313,7 @@ int initializeNewGameFromString(char *string)
                 printf("problem 8");
 
         return -1;
-    }    
+    }
     if(!(__builtin_popcountll(GAME_STATE[BLACK_KING_OCCUPANCY])==1)){
                 printf("problem 9");
 

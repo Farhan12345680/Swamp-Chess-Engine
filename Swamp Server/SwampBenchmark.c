@@ -1,0 +1,27 @@
+#include "./Board Representation/GameStateMoveGeneration.h"
+#include "./UCI Server/UCI.h"
+#include "./engine/engine.h"
+
+
+
+
+int main(){
+
+
+        initializer();
+        uint64_t perft1=divideBulk(7);
+
+        // divide(3);
+
+}
+
+
+// int main(){
+//     pthread_t thread1;
+//     pthread_create(&thread1,NULL , EngineHandler ,(void*)retValueOfComputation);
+//     pthread_t thread2 ;
+//     pthread_create(&thread2,NULL , UCI_SERVER , (void*) retValueOfComputation);
+
+
+//     pthread_join(thread2 , NULL);
+// }

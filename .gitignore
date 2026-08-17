@@ -1,2 +1,4 @@
 *.out
 *.exe
+perf.data
+perf.data.old
