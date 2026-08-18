@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <strings.h>
 
 #ifndef __uint64_t
 #define __uint64_t uint64_t
@@ -953,15 +954,8 @@ static inline bool isTheKingInCheck(int curr, int opp)
     uint64_t occ = GAME_STATE[TOTAL_OCCUPANCY];
     uint64_t ownOcc = GAME_STATE[(curr >> 2) + WHITE_OCCUPANCY];
 
-    Square kingSq = (Square)__builtin_ctzll(GAME_STATE[GAME_STATE[SIDE]]);
-    // if(GAME_STATE[ENPASSANT_SQUARE] != ES){
-    //     printBoard();
-    //     assert(ENPASSANT_SQUARE== ES );
-    // }
-    // if(kingSq == ES){
-    //     printBoard();
-    //     assert(kingSq!= ES );
-    // }
+    Square kingSq = (Square)__builtin_ctzll(GAME_STATE[curr]);
+
     if (knightTable[kingSq] & GAME_STATE[opp + 4])
         return true;
 
@@ -1485,7 +1479,7 @@ static inline void  checkKingInCheckAndAddMove(int curr , int opp
                                     ,MoveList*    _moveList)
 {
 
-    if (__builtin_expect( !isTheKingInCheck(curr , opp) , 0 ))
+    if ( !isTheKingInCheck(curr , opp))
     {
         uint16_t indiMove=0;
         indiMove |= src;
@@ -1716,16 +1710,40 @@ static inline void generateWhiteBishopMoveList(MoveList *    _moveList)
                    capturedColor, capturedPiece, _moveList);
         }
     }
-    // generatePieceAttack(GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP_OCCUPANCY,
-    //                     WHITE_OCCUPANCY, 0, GAME_STATE[WHITE_KING_OCCUPANCY], _moveList, 0 , 6);
+
 }
 
-static inline void generateWhiteRookMoveList(MoveList *    _moveList)
+static inline void generateBishopMoveList(MoveList *    _moveList)
 {
-    __uint64_t _temp = GAME_STATE[WHITE_ROOK];
-    __uint64_t _srcPieceOccupancy = WHITE_ROOK;
+    const int side = GAME_STATE[SIDE];
+    __uint64_t _temp = GAME_STATE[side+3];
+    __uint64_t _srcPieceOccupancy = side+3;
     __uint64_t totalOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
-    __uint64_t _srcColorOccupancy = WHITE_OCCUPANCY;
+    __uint64_t _srcColorOccupancy = (side>>2) + WHITE_OCCUPANCY;
+
+    int _promotion =0;
+    while (_temp) {
+        Square src = (Square)__builtin_ctzll(_temp);
+        _temp &= _temp - 1;
+        uint64_t attacks = getBishopAttack(src, totalOccupancy, GAME_STATE[_srcColorOccupancy]);
+        while (attacks) {
+            Square dest = (Square)__builtin_ctzll(attacks);
+            attacks &= attacks - 1;
+            uint64_t capturedColor = helperArr[_chessBoard[dest]][1];
+            uint64_t capturedPiece = helperArr[_chessBoard[dest]][0];
+            doMove(src, dest, _promotion, _srcColorOccupancy, _srcPieceOccupancy,
+                   capturedColor, capturedPiece, _moveList);
+        }
+    }
+
+}
+static inline void generateRookMoveList(MoveList *    _moveList)
+{
+    const int side = GAME_STATE[SIDE];
+    __uint64_t _temp = GAME_STATE[side+2];
+    __uint64_t _srcPieceOccupancy = side+2;
+    __uint64_t totalOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
+    __uint64_t _srcColorOccupancy = (side>>2) + WHITE_OCCUPANCY;
 
     int _promotion =0;
     while (_temp) {
@@ -1741,16 +1759,15 @@ static inline void generateWhiteRookMoveList(MoveList *    _moveList)
                    capturedColor, capturedPiece, _moveList);
         }
     }
-    // generatePieceAttack(GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK_OCCUPANCY,
-    //                     WHITE_OCCUPANCY, 0, GAME_STATE[WHITE_KING_OCCUPANCY], _moveList , 0 , 6);
-}
 
-static inline void generateWhiteQueenMoveList(MoveList *    _moveList)
+}
+static inline void generateQueenMoveList(MoveList *    _moveList)
 {
-    __uint64_t _temp = GAME_STATE[WHITE_QUEEN];
-    __uint64_t _srcPieceOccupancy = WHITE_QUEEN;
+    const int side = GAME_STATE[SIDE];
+    __uint64_t _temp = GAME_STATE[side+1];
+    __uint64_t _srcPieceOccupancy = side+1;
     __uint64_t totalOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
-    __uint64_t _srcColorOccupancy = WHITE_OCCUPANCY;
+    __uint64_t _srcColorOccupancy = (side>>2) + WHITE_OCCUPANCY;
 
     int _promotion =0;
     while (_temp) {
@@ -1766,8 +1783,66 @@ static inline void generateWhiteQueenMoveList(MoveList *    _moveList)
                    capturedColor, capturedPiece, _moveList);
         }
     }
-    // generatePieceAttack(GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN_OCCUPANCY,
-    //                     WHITE_OCCUPANCY, 0, GAME_STATE[WHITE_KING_OCCUPANCY], _moveList , 0 , 6);
+
+}
+
+static inline void generateKnightMoveList(MoveList *    _moveList)
+{
+    const int side = GAME_STATE[SIDE];
+    __uint64_t _temp = GAME_STATE[side+4];
+    __uint64_t _srcPieceOccupancy = side+4;
+    __uint64_t totalOccupancy = GAME_STATE[TOTAL_OCCUPANCY];
+    __uint64_t _srcColorOccupancy = (side>>2) + WHITE_OCCUPANCY;
+
+    int _promotion =0;
+    while (_temp) {
+        Square src = (Square)__builtin_ctzll(_temp);
+        _temp &= _temp - 1;
+        uint64_t attacks = getKnightAttack(src, totalOccupancy, GAME_STATE[_srcColorOccupancy]);
+        while (attacks) {
+            Square dest = (Square)__builtin_ctzll(attacks);
+            attacks &= attacks - 1;
+            uint64_t capturedColor = helperArr[_chessBoard[dest]][1];
+            uint64_t capturedPiece = helperArr[_chessBoard[dest]][0];
+            doMove(src, dest, _promotion, _srcColorOccupancy, _srcPieceOccupancy,
+                   capturedColor, capturedPiece, _moveList);
+        }
+    }
+
+}
+
+static inline void generateKingMoveList(MoveList *   _moveList)
+{
+    int side = GAME_STATE[SIDE];
+
+        Square src = (Square)__builtin_ctzll(GAME_STATE[side]);
+
+
+        uint64_t attacks =
+            getKingAttackAndMovement(src,
+                                GAME_STATE[ (side>>2)+WHITE_OCCUPANCY],
+                                getAttackBitBoard(side , side^6));
+
+        while (attacks)
+        {
+            Square dest = __builtin_ctzll(attacks);
+            attacks &= attacks - 1;
+
+            uint64_t capturedColor = helperArr[_chessBoard[dest]][1];
+            uint64_t capturedPiece = helperArr[_chessBoard[dest]][0];
+
+            doMove(
+                src,
+                dest,
+                0,
+                (side>>2) +WHITE_OCCUPANCY,
+                side,
+                capturedColor,
+                capturedPiece ,_moveList);
+        }
+
+
+    generateCastlingList(_moveList);
 }
 
 static inline void generateWhiteKnightMoveList(MoveList *    _moveList)
@@ -1826,36 +1901,8 @@ void generateKingAttack(uint64_t _temp, uint64_t _srcPieceOccupancy,
                          uint64_t _srcColorOccupancy, int _promotion,
                          uint64_t _currKingBitBoard, MoveList *   _moveList , int curr, int opp)
 {
-    uint64_t savedEn = GAME_STATE[ENPASSANT_SQUARE];
-    while (_temp)
-    {
-        Square src = (Square)__builtin_ctzll(_temp);
-        _temp &= _temp - 1;
 
-        uint64_t attacks =
-            getKingAttackAndMovement(src,
-                                GAME_STATE[_srcColorOccupancy],
-                                getAttackBitBoard(curr , opp));
 
-        while (attacks)
-        {
-            Square dest = __builtin_ctzll(attacks);
-            attacks &= attacks - 1;
-
-            uint64_t capturedColor = helperArr[_chessBoard[dest]][1];
-            uint64_t capturedPiece = helperArr[_chessBoard[dest]][0];
-
-            doMove(
-                src,
-                dest,
-                _promotion,
-                _srcColorOccupancy,
-                _srcPieceOccupancy,
-                capturedColor,
-                capturedPiece ,_moveList);
-        }
-    }
-    GAME_STATE[ENPASSANT_SQUARE]=savedEn;
 }
 
 
@@ -1980,6 +2027,9 @@ static inline void generateEnpassantMoves(MoveList *   _moveList)
     int opp = GAME_STATE[SIDE] == 0 ? 6 : 0;
     uint64_t pawns = GAME_STATE[curr + 5];
     pawns &= pawnEnpassantMask[GAME_STATE[SIDE]>>2] ;
+    uint64_t dest1= 1ULL << enPassant;
+
+    pawns &= ((dest1>>7) |(dest1 >>9) |(dest1 <<7)|(dest1<<9));
 
     while (pawns)
     {
@@ -1994,275 +2044,43 @@ static inline void generateEnpassantMoves(MoveList *   _moveList)
     }
 }
 
-// static inline void generatePawnMovements(MoveList *_moveList)
-// {
-//     generateEnpassantMoves(_moveList);
-
-//     int side = GAME_STATE[SIDE];
-//     int ownOccupancy = (side >> 2) + WHITE_OCCUPANCY;
-//     int enemyOccupancy = (side == 0) ? BLACK_OCCUPANCY : WHITE_OCCUPANCY;
-//     int pawnOccupancy = side + 5;
-
-//     uint64_t pawns = GAME_STATE[pawnOccupancy];
-//     uint64_t occupied = GAME_STATE[TOTAL_OCCUPANCY];
-//     uint64_t own = GAME_STATE[ownOccupancy];
-//     uint64_t enemy = GAME_STATE[enemyOccupancy];
-
-//     while (pawns)
-//     {
-//         int index = __builtin_ctzll(pawns);
-//         pawns &= pawns - 1;
-
-//         if (side == 0)
-//         {
-//             int forward = index + 8;
-
-//             if (forward < 64 && !(occupied & (1ULL << forward)))
-//             {
-//                 if (index >= 48)
-//                 {
-//                     uint64_t mask = 1ULL << forward;
-//                     uint64_t srcMask = 1ULL << index;
-//                     uint64_t gMask = mask | srcMask;
-
-//                     GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-
-//                     if (__builtin_expect(!isTheKingInCheck(0, 6), 0))
-//                     {
-//                         uint16_t move = index | (forward << 6);
-
-//                         for (int prom = 1; prom <= 4; prom++)
-//                         {
-//                             uint16_t promotedMove =
-//                                 (move & 0x0FFF) | ((uint16_t)prom << 12);
-//                             _moveList->moves[_moveList->index++] = promotedMove;
-//                         }
-//                     }
-
-//                     GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-//                 }
-//                 else
-//                 {
-//                     doMove(index, forward, 0,
-//                            WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
-//                            NO_PIECE, NO_PIECE, _moveList);
-
-//                     if (index >= 8 && index < 16)
-//                     {
-//                         int doubleForward = index + 16;
-
-//                         if (!(occupied & (1ULL << doubleForward)))
-//                         {
-//                             doMove(index, doubleForward, 0,
-//                                    WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
-//                                    NO_PIECE, NO_PIECE, _moveList);
-//                         }
-//                     }
-//                 }
-//             }
-
-//             uint64_t attacks = getWhitePawnAttack(
-//                 (Square)index,
-//                 enemy,
-//                 own
-//             );
-
-//             while (attacks)
-//             {
-//                 int dest = __builtin_ctzll(attacks);
-//                 attacks &= attacks - 1;
-
-//                 int capturedColor = helperArr[_chessBoard[dest]][0];
-//                 int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-//                 if (index >= 48)
-//                 {
-//                     uint64_t mask = 1ULL << dest;
-//                     uint64_t srcMask = 1ULL << index;
-//                     uint64_t gMask = mask | srcMask;
-
-//                     GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[capturedColor] ^= mask;
-//                     GAME_STATE[capturedPiece] ^= mask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-
-//                     if (__builtin_expect(!isTheKingInCheck(0, 6), 0))
-//                     {
-//                         uint16_t move = index | (dest << 6);
-
-//                         for (int prom = 1; prom <= 4; prom++)
-//                         {
-//                             uint16_t promotedMove =
-//                                 (move & 0x0FFF) | ((uint16_t)prom << 12);
-//                             _moveList->moves[_moveList->index++] = promotedMove;
-//                         }
-//                     }
-
-//                     GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[capturedColor] ^= mask;
-//                     GAME_STATE[capturedPiece] ^= mask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-//                 }
-//                 else
-//                 {
-//                     doMove(index, dest, 0,
-//                            WHITE_OCCUPANCY, WHITE_PAWN_OCCUPANCY,
-//                            capturedColor, capturedPiece, _moveList);
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             int forward = index - 8;
-
-//             if (forward >= 0 && !(occupied & (1ULL << forward)))
-//             {
-//                 if (index < 16)
-//                 {
-//                     uint64_t mask = 1ULL << forward;
-//                     uint64_t srcMask = 1ULL << index;
-//                     uint64_t gMask = mask | srcMask;
-
-//                     GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-
-//                     if (__builtin_expect(!isTheKingInCheck(6, 0), 0))
-//                     {
-//                         uint16_t move = index | (forward << 6);
-
-//                         for (int prom = 1; prom <= 4; prom++)
-//                         {
-//                             uint16_t promotedMove =
-//                                 (move & 0x0FFF) | ((uint16_t)prom << 12);
-//                             _moveList->moves[_moveList->index++] = promotedMove;
-//                         }
-//                     }
-
-//                     GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-//                 }
-//                 else
-//                 {
-//                     doMove(index, forward, 0,
-//                            BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
-//                            NO_PIECE, NO_PIECE, _moveList);
-
-//                     if (index >= 48 && index <= 55)
-//                     {
-//                         int doubleForward = index - 16;
-
-//                         if (!(occupied & (1ULL << doubleForward)))
-//                         {
-//                             doMove(index, doubleForward, 0,
-//                                    BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
-//                                    NO_PIECE, NO_PIECE, _moveList);
-//                         }
-//                     }
-//                 }
-//             }
-
-//             uint64_t attacks = getBlackPawnAttack(
-//                 (Square)index,
-//                 enemy,
-//                 own
-//             );
-
-//             while (attacks)
-//             {
-//                 int dest = __builtin_ctzll(attacks);
-//                 attacks &= attacks - 1;
-
-//                 int capturedColor = helperArr[_chessBoard[dest]][0];
-//                 int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-//                 if (index < 16)
-//                 {
-//                     uint64_t mask = 1ULL << dest;
-//                     uint64_t srcMask = 1ULL << index;
-//                     uint64_t gMask = mask | srcMask;
-
-//                     GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[capturedColor] ^= mask;
-//                     GAME_STATE[capturedPiece] ^= mask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-
-//                     if (__builtin_expect(!isTheKingInCheck(6, 0), 0))
-//                     {
-//                         uint16_t move = index | (dest << 6);
-
-//                         for (int prom = 1; prom <= 4; prom++)
-//                         {
-//                             uint16_t promotedMove =
-//                                 (move & 0x0FFF) | ((uint16_t)prom << 12);
-//                             _moveList->moves[_moveList->index++] = promotedMove;
-//                         }
-//                     }
-
-//                     GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
-//                     GAME_STATE[capturedColor] ^= mask;
-//                     GAME_STATE[capturedPiece] ^= mask;
-//                     GAME_STATE[TOTAL_OCCUPANCY] =
-//                         GAME_STATE[BLACK_OCCUPANCY] | GAME_STATE[WHITE_OCCUPANCY];
-//                 }
-//                 else
-//                 {
-//                     doMove(index, dest, 0,
-//                            BLACK_OCCUPANCY, BLACK_PAWN_OCCUPANCY,
-//                            capturedColor, capturedPiece, _moveList);
-//                 }
-//             }
-//         }
-//     }
-// }
 static inline void generatePawnMovements(MoveList *_moveList)
 {
     generateEnpassantMoves(_moveList);
 
+    int side = GAME_STATE[SIDE];
+
     const uint64_t FILE_A = 0x0101010101010101ULL;
     const uint64_t FILE_H = 0x8080808080808080ULL;
+
     const uint64_t RANK_1 = 0x00000000000000FFULL;
     const uint64_t RANK_2 = 0x000000000000FF00ULL;
     const uint64_t RANK_7 = 0x00FF000000000000ULL;
     const uint64_t RANK_8 = 0xFF00000000000000ULL;
 
-    uint64_t occ = GAME_STATE[TOTAL_OCCUPANCY];
-    uint64_t empty = ~occ;
+    const uint64_t occupied = GAME_STATE[TOTAL_OCCUPANCY];
+    const uint64_t empty = ~occupied;
 
-    if (GAME_STATE[SIDE] == 0)
+    if (side == 0)
     {
-        uint64_t pawns = GAME_STATE[WHITE_PAWN_OCCUPANCY];
-        uint64_t enemy = GAME_STATE[BLACK_OCCUPANCY];
+        const uint64_t pawns = GAME_STATE[WHITE_PAWN_OCCUPANCY];
+        const uint64_t enemy = GAME_STATE[BLACK_OCCUPANCY];
+        const uint64_t own = GAME_STATE[WHITE_OCCUPANCY];
 
-        uint64_t single = (pawns << 8) & empty;
+        uint64_t singlePush =
+            (pawns << 8) & empty;
+
         uint64_t doublePush =
-            ((single & 0x0000000000FF0000ULL) << 8) & empty;
+            (((pawns & RANK_2) << 8) & empty) << 8 & empty;
 
-        uint64_t capturesLeft =
-            (pawns << 7) & ~FILE_H & enemy;
+        uint64_t leftCapture =
+            ((pawns & ~FILE_A) << 7) & enemy;
 
-        uint64_t capturesRight =
-            (pawns << 9) & ~FILE_A & enemy;
+        uint64_t rightCapture =
+            ((pawns & ~FILE_H) << 9) & enemy;
 
-        uint64_t moves;
+        uint64_t moves = singlePush & ~RANK_8;
 
-        moves = single & ~RANK_8;
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2277,6 +2095,7 @@ static inline void generatePawnMovements(MoveList *_moveList)
         }
 
         moves = doublePush;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2290,26 +2109,81 @@ static inline void generatePawnMovements(MoveList *_moveList)
                    _moveList);
         }
 
-        moves = single & RANK_8;
+        moves = leftCapture & ~RANK_8;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
             moves &= moves - 1;
 
-            int src = dest - 8;
+            int capturedColor = helperArr[_chessBoard[dest]][0];
+            int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            for (int prom = 1; prom <= 4; prom++)
-            {
-                doMove(src, dest, prom,
-                       WHITE_OCCUPANCY,
-                       WHITE_PAWN_OCCUPANCY,
-                       NO_PIECE,
-                       NO_PIECE,
-                       _moveList);
-            }
+            doMove(dest - 7, dest, 0,
+                   WHITE_OCCUPANCY,
+                   WHITE_PAWN_OCCUPANCY,
+                   capturedColor,
+                   capturedPiece,
+                   _moveList);
         }
 
-        moves = capturesLeft & ~RANK_8;
+        moves = rightCapture & ~RANK_8;
+
+        while (moves)
+        {
+            int dest = __builtin_ctzll(moves);
+            moves &= moves - 1;
+
+            int capturedColor = helperArr[_chessBoard[dest]][0];
+            int capturedPiece = helperArr[_chessBoard[dest]][1];
+
+            doMove(dest - 9, dest, 0,
+                   WHITE_OCCUPANCY,
+                   WHITE_PAWN_OCCUPANCY,
+                   capturedColor,
+                   capturedPiece,
+                   _moveList);
+        }
+
+        moves = singlePush & RANK_8;
+
+        while (moves)
+        {
+            int dest = __builtin_ctzll(moves);
+            moves &= moves - 1;
+
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << (dest - 8);
+            uint64_t gMask = mask | srcMask;
+
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+
+            if (!isTheKingInCheck(0, 6))
+            {
+                uint16_t move =
+                    (uint16_t)(dest - 8) |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
+            }
+
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+        }
+
+        moves = leftCapture & RANK_8;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2320,15 +2194,42 @@ static inline void generatePawnMovements(MoveList *_moveList)
             int capturedColor = helperArr[_chessBoard[dest]][0];
             int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            doMove(src, dest, 0,
-                   WHITE_OCCUPANCY,
-                   WHITE_PAWN_OCCUPANCY,
-                   capturedColor,
-                   capturedPiece,
-                   _moveList);
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << src;
+            uint64_t gMask = mask | srcMask;
+
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+
+            if (!isTheKingInCheck(0, 6))
+            {
+                uint16_t move =
+                    (uint16_t)src |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
+            }
+
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
         }
 
-        moves = capturesRight & ~RANK_8;
+        moves = rightCapture & RANK_8;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2339,76 +2240,60 @@ static inline void generatePawnMovements(MoveList *_moveList)
             int capturedColor = helperArr[_chessBoard[dest]][0];
             int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            doMove(src, dest, 0,
-                   WHITE_OCCUPANCY,
-                   WHITE_PAWN_OCCUPANCY,
-                   capturedColor,
-                   capturedPiece,
-                   _moveList);
-        }
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << src;
+            uint64_t gMask = mask | srcMask;
 
-        moves = capturesLeft & RANK_8;
-        while (moves)
-        {
-            int dest = __builtin_ctzll(moves);
-            moves &= moves - 1;
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
 
-            int src = dest - 7;
-
-            int capturedColor = helperArr[_chessBoard[dest]][0];
-            int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-            for (int prom = 1; prom <= 4; prom++)
+            if (!isTheKingInCheck(0, 6))
             {
-                doMove(src, dest, prom,
-                       WHITE_OCCUPANCY,
-                       WHITE_PAWN_OCCUPANCY,
-                       capturedColor,
-                       capturedPiece,
-                       _moveList);
+                uint16_t move =
+                    (uint16_t)src |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
             }
-        }
 
-        moves = capturesRight & RANK_8;
-        while (moves)
-        {
-            int dest = __builtin_ctzll(moves);
-            moves &= moves - 1;
-
-            int src = dest - 9;
-
-            int capturedColor = helperArr[_chessBoard[dest]][0];
-            int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-            for (int prom = 1; prom <= 4; prom++)
-            {
-                doMove(src, dest, prom,
-                       WHITE_OCCUPANCY,
-                       WHITE_PAWN_OCCUPANCY,
-                       capturedColor,
-                       capturedPiece,
-                       _moveList);
-            }
+            GAME_STATE[WHITE_OCCUPANCY] ^= gMask;
+            GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
         }
     }
     else
     {
-        uint64_t pawns = GAME_STATE[BLACK_PAWN_OCCUPANCY];
-        uint64_t enemy = GAME_STATE[WHITE_OCCUPANCY];
+        const uint64_t pawns = GAME_STATE[BLACK_PAWN_OCCUPANCY];
+        const uint64_t enemy = GAME_STATE[WHITE_OCCUPANCY];
+        const uint64_t own = GAME_STATE[BLACK_OCCUPANCY];
 
-        uint64_t single = (pawns >> 8) & empty;
+        uint64_t singlePush =
+            (pawns >> 8) & empty;
+
         uint64_t doublePush =
-            ((single & 0x0000FF0000000000ULL) >> 8) & empty;
+            (((pawns & RANK_7) >> 8) & empty) >> 8 & empty;
 
-        uint64_t capturesLeft =
-            (pawns >> 9) & ~FILE_H & enemy;
+        uint64_t leftCapture =
+            ((pawns & ~FILE_A) >> 9) & enemy;
 
-        uint64_t capturesRight =
-            (pawns >> 7) & ~FILE_A & enemy;
+        uint64_t rightCapture =
+            ((pawns & ~FILE_H) >> 7) & enemy;
 
-        uint64_t moves;
+        uint64_t moves = singlePush & ~RANK_1;
 
-        moves = single & ~RANK_1;
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2423,6 +2308,7 @@ static inline void generatePawnMovements(MoveList *_moveList)
         }
 
         moves = doublePush;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2436,26 +2322,81 @@ static inline void generatePawnMovements(MoveList *_moveList)
                    _moveList);
         }
 
-        moves = single & RANK_1;
+        moves = leftCapture & ~RANK_1;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
             moves &= moves - 1;
 
-            int src = dest + 8;
+            int capturedColor = helperArr[_chessBoard[dest]][0];
+            int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            for (int prom = 1; prom <= 4; prom++)
-            {
-                doMove(src, dest, prom,
-                       BLACK_OCCUPANCY,
-                       BLACK_PAWN_OCCUPANCY,
-                       NO_PIECE,
-                       NO_PIECE,
-                       _moveList);
-            }
+            doMove(dest + 9, dest, 0,
+                   BLACK_OCCUPANCY,
+                   BLACK_PAWN_OCCUPANCY,
+                   capturedColor,
+                   capturedPiece,
+                   _moveList);
         }
 
-        moves = capturesLeft & ~RANK_1;
+        moves = rightCapture & ~RANK_1;
+
+        while (moves)
+        {
+            int dest = __builtin_ctzll(moves);
+            moves &= moves - 1;
+
+            int capturedColor = helperArr[_chessBoard[dest]][0];
+            int capturedPiece = helperArr[_chessBoard[dest]][1];
+
+            doMove(dest + 7, dest, 0,
+                   BLACK_OCCUPANCY,
+                   BLACK_PAWN_OCCUPANCY,
+                   capturedColor,
+                   capturedPiece,
+                   _moveList);
+        }
+
+        moves = singlePush & RANK_1;
+
+        while (moves)
+        {
+            int dest = __builtin_ctzll(moves);
+            moves &= moves - 1;
+
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << (dest + 8);
+            uint64_t gMask = mask | srcMask;
+
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+
+            if (!isTheKingInCheck(6, 0))
+            {
+                uint16_t move =
+                    (uint16_t)(dest + 8) |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
+            }
+
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+        }
+
+        moves = leftCapture & RANK_1;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2466,15 +2407,42 @@ static inline void generatePawnMovements(MoveList *_moveList)
             int capturedColor = helperArr[_chessBoard[dest]][0];
             int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            doMove(src, dest, 0,
-                   BLACK_OCCUPANCY,
-                   BLACK_PAWN_OCCUPANCY,
-                   capturedColor,
-                   capturedPiece,
-                   _moveList);
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << src;
+            uint64_t gMask = mask | srcMask;
+
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
+
+            if (!isTheKingInCheck(6, 0))
+            {
+                uint16_t move =
+                    (uint16_t)src |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
+            }
+
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
         }
 
-        moves = capturesRight & ~RANK_1;
+        moves = rightCapture & RANK_1;
+
         while (moves)
         {
             int dest = __builtin_ctzll(moves);
@@ -2485,89 +2453,58 @@ static inline void generatePawnMovements(MoveList *_moveList)
             int capturedColor = helperArr[_chessBoard[dest]][0];
             int capturedPiece = helperArr[_chessBoard[dest]][1];
 
-            doMove(src, dest, 0,
-                   BLACK_OCCUPANCY,
-                   BLACK_PAWN_OCCUPANCY,
-                   capturedColor,
-                   capturedPiece,
-                   _moveList);
-        }
+            uint64_t mask = 1ULL << dest;
+            uint64_t srcMask = 1ULL << src;
+            uint64_t gMask = mask | srcMask;
 
-        moves = capturesLeft & RANK_1;
-        while (moves)
-        {
-            int dest = __builtin_ctzll(moves);
-            moves &= moves - 1;
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
 
-            int src = dest + 9;
-
-            int capturedColor = helperArr[_chessBoard[dest]][0];
-            int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-            for (int prom = 1; prom <= 4; prom++)
+            if (!isTheKingInCheck(6, 0))
             {
-                doMove(src, dest, prom,
-                       BLACK_OCCUPANCY,
-                       BLACK_PAWN_OCCUPANCY,
-                       capturedColor,
-                       capturedPiece,
-                       _moveList);
+                uint16_t move =
+                    (uint16_t)src |
+                    (uint16_t)(dest << 6);
+
+                for (int prom = 1; prom <= 4; prom++)
+                {
+                    _moveList->moves[_moveList->index++] =
+                        move | (uint16_t)(prom << 12);
+                }
             }
-        }
 
-        moves = capturesRight & RANK_1;
-        while (moves)
-        {
-            int dest = __builtin_ctzll(moves);
-            moves &= moves - 1;
-
-            int src = dest + 7;
-
-            int capturedColor = helperArr[_chessBoard[dest]][0];
-            int capturedPiece = helperArr[_chessBoard[dest]][1];
-
-            for (int prom = 1; prom <= 4; prom++)
-            {
-                doMove(src, dest, prom,
-                       BLACK_OCCUPANCY,
-                       BLACK_PAWN_OCCUPANCY,
-                       capturedColor,
-                       capturedPiece,
-                       _moveList);
-            }
+            GAME_STATE[BLACK_OCCUPANCY] ^= gMask;
+            GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= gMask;
+            GAME_STATE[capturedColor] ^= mask;
+            GAME_STATE[capturedPiece] ^= mask;
+            GAME_STATE[TOTAL_OCCUPANCY] =
+                GAME_STATE[WHITE_OCCUPANCY] |
+                GAME_STATE[BLACK_OCCUPANCY];
         }
     }
 }
+
+
 
 void generateMoveList(MoveList * _moves)
 {
 
     if(__builtin_expect(isTheKingInDoubleCheck(GAME_STATE[SIDE], GAME_STATE[SIDE]^6) ,0)){
-        if(GAME_STATE[SIDE]==0){
-            generateWhiteKingMoveList(_moves);
-            return;
-        }
-
-        generateBlackKingMoveList(_moves);
+        generateKingMoveList(_moves )
         return;
     }
-    if (GAME_STATE[SIDE] == 0)
-    {
-        generatePawnMovements(_moves);
-        generateWhiteBishopMoveList(_moves);
-        generateWhiteRookMoveList(_moves);
-        generateWhiteQueenMoveList(_moves);
-        generateWhiteKnightMoveList(_moves);
-        generateWhiteKingMoveList(_moves);
-        return;
-    }
+    generatePawnMovements(_moves);
+    generateKingMoveList(_moves);
+    generateRookMoveList(_moves);
+    generateBishopMoveList(_moves);
+    generateQueenMoveList(_moves);
+    generateKnightMoveList(_moves);
 
-        generateBlackBishopMoveList(_moves);
-        generatePawnMovements(_moves);
-        generateBlackRookMoveList(_moves);
-        generateBlackQueenMoveList(_moves);
-        generateBlackKnightMoveList(_moves);
-        generateBlackKingMoveList(_moves);
 }
 
 __uint64_t makeMove(uint16_t move);
