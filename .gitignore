@@ -2,3 +2,4 @@
 *.exe
 perf.data
 perf.data.old
+*.class
