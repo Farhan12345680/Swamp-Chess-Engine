@@ -1,6 +1,6 @@
-#include "./Board Representation/GameStateMoveGeneration.h"
-#include "./UCI Server/UCI.h"
-#include "./engine/engine.h"
+#include "./1. core/core.h"
+#include "./1. core/uciserver.h"
+#include "./1. core/engine.h"
 
 
 

@@ -1,1 +1,0 @@
-gcc -O3 -march=native Swamp.c -o Swamp.out

@@ -1,15 +1,14 @@
-#include "./Board Representation/GameStateMoveGeneration.h"
-#include "./UCI Server/UCI.h"
-#include "./engine/engine.h"
+#include "./1. core/engine.h"
+
 
 
 
 
 int main(){
+        GAME_STATE_STRUCT state={0};
 
-
-        initializer();
-        uint64_t perft1=divideBulk(7);
+        initializer(&state);
+        uint64_t perft1=divideBulk(7 , &state);
 
         // divide(3);
 

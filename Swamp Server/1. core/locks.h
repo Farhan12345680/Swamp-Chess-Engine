@@ -10,13 +10,14 @@
 // ------------GLOBAL STATE------------
 // ------------ VARIABLE---------------
 
-char value[10000];
-void* retValueOfComputation=(void*)value;
+extern char value[10000];
+extern void* retValueOfComputation;
 
-pthread_mutex_t inputLock= PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  inputCond = PTHREAD_COND_INITIALIZER;
+extern pthread_mutex_t inputLock;
+extern pthread_cond_t  inputCond ;
 
 typedef enum {
+    CMD_TYPE_NOCOMMAND=0,
     CMD_TYPE_ISREADY=1,
     CMD_TYPE_FENPOSITION,
     CMD_TYPE_PERFT,
@@ -27,8 +28,4 @@ typedef enum {
 } CMD_TYPE;
 
 
-CMD_TYPE CMD_CASE=0;
-
-
-
-
+extern CMD_TYPE CMD_CASE;

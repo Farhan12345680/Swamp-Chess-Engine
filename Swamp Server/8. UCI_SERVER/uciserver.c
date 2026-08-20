@@ -1,110 +1,18 @@
-#pragma once
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <strings.h>
-#include "../engine/Locks.h"
-#include "../Board Representation/GameStateMoveGeneration.h"
-
-#define UCI_LINE_SIZE 4096
-#define MAX_MOVES 256
-#define MAX_FEN_SIZE 128
+#include "../1. core/uciserver.h"
 
 
-typedef enum
-{
-    CMD_UCI,
-    CMD_ISREADY,
-    CMD_UCINEWGAME,
-    CMD_POSITION,
-    CMD_GO,
-    CMD_STOP,
-    CMD_QUIT,
-    CMD_UNKNOWN,
-    CMD_PRINTBOARD
-
-} UCI_COMMAND;
-
-
-
-typedef struct
-{
-    bool perft;
-    int perft_level;
-
-    bool depth;
-    int depthValue;
-
-    bool nodes;
-    __uint64_t nodesValue;
-
-    bool movetime;
-    __uint64_t movetimeValue;
-
-    __uint64_t mate;
-    int mateValue;
-    
-    
-    bool wtime;
-    __uint64_t wtimeValue;
-
-    bool btime;
-    __uint64_t btimeValue;
-
-    bool winc;
-    __uint64_t wincValue;
-
-    bool binc;
-    __uint64_t bincValue;
-
-} GO_COMMAND;
-
-
-
-typedef struct
-{
-    bool startpos;
-
-
-    bool hasFen;
-    char fen[MAX_FEN_SIZE];
-
-    char moves[MAX_MOVES][6];
-    int moveCount;
-
-} POSITION_COMMAND;
-
-
-typedef struct
-{
-    UCI_COMMAND type;
-
-    GO_COMMAND go;
-
-    POSITION_COMMAND position;
-
-} UCI_COMMAND_DATA;
-
-
-
-
-static void resetGoCommand(GO_COMMAND *go)
+void resetGoCommand(GO_COMMAND *go)
 {
     memset(go, 0, sizeof(GO_COMMAND));
 }
 
-static void resetPositionCommand(POSITION_COMMAND *position)
+void resetPositionCommand(POSITION_COMMAND *position)
 {
     memset(position, 0, sizeof(POSITION_COMMAND));
 }
 
 
-
-
-static bool parseGo(char *line, GO_COMMAND *go)
+bool parseGo(char *line, GO_COMMAND *go)
 {
     resetGoCommand(go);
 
@@ -131,7 +39,7 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->depthValue = strtoull(token, NULL, 10);
 
         }
-        
+
         else if(strcasecmp(token , "perft")==0){
             token = strtok(NULL, " \t\r\n");
 
@@ -141,7 +49,7 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->perft = true;
             go->perft_level = strtoull(token, NULL, 10);
         }
-        
+
         else if (strcasecmp(token, "movetime") == 0)
         {
             token = strtok(NULL, " \t\r\n");
@@ -195,14 +103,12 @@ static bool parseGo(char *line, GO_COMMAND *go)
             go->binc = true;
             go->bincValue = strtoull(token, NULL, 10);
         }
-
-
     }
-
     return true;
 }
 
-static bool parsePosition(char *line, POSITION_COMMAND *position)
+
+bool parsePosition(char *line, POSITION_COMMAND *position)
 {
     resetPositionCommand(position);
 
@@ -263,7 +169,7 @@ static bool parsePosition(char *line, POSITION_COMMAND *position)
         // memcpy(position->fen , token,128);
 
 
-        
+
     }
 
     else if(strcasecmp(token , "moves")==0)
@@ -329,12 +235,10 @@ static bool parsePosition(char *line, POSITION_COMMAND *position)
             token = strtok(NULL, " \t\r\n");
         }
     }
-
-
     return true;
 }
 
-static bool parseUCI(char *line, UCI_COMMAND_DATA *command)
+bool parseUCI(char *line, UCI_COMMAND_DATA *command)
 {
     memset(command, 0, sizeof(UCI_COMMAND_DATA));
 
@@ -349,8 +253,8 @@ static bool parseUCI(char *line, UCI_COMMAND_DATA *command)
     if (token == NULL)
     {
         return false;
-    }       
-    
+    }
+
     if (strcasecmp(token, "printboard") == 0)
     {
         command->type = CMD_PRINTBOARD;
@@ -428,10 +332,10 @@ void* UCI_SERVER(void* arg)
     UCI_COMMAND_DATA command;
 
 
-    
+
     while (fgets(line, sizeof(line), stdin))
     {
-        
+
         if (!parseUCI(line, &command))
         {
             printf("invalid input\n");
@@ -460,7 +364,7 @@ void* UCI_SERVER(void* arg)
 
             case CMD_ISREADY:
                 pthread_mutex_lock(&inputLock);
-                
+
                 CMD_CASE=CMD_TYPE_ISREADY;
 
                 pthread_cond_broadcast(&inputCond);
@@ -475,7 +379,7 @@ void* UCI_SERVER(void* arg)
 
             case CMD_UCINEWGAME:
                 pthread_mutex_lock(&inputLock);
-                
+
                 CMD_CASE=CMD_TYPE_ISREADY;
 
                 pthread_cond_broadcast(&inputCond);
@@ -497,7 +401,7 @@ void* UCI_SERVER(void* arg)
                 else if (command.position.hasFen)
                 {
                     pthread_mutex_lock(&inputLock);
-                    
+
                     CMD_CASE=CMD_TYPE_FENPOSITION;
 
                     // printf("--> %s\n", command.position.fen);
@@ -508,7 +412,7 @@ void* UCI_SERVER(void* arg)
 
 
                 for (int i = 0; i < command.position.moveCount; i++)
-                {   
+                {
                     pthread_mutex_lock(&inputLock);
                     memcpy(retValueOfComputation ,command.position.moves[i], strlen(command.position.moves[i])+1);
                     CMD_CASE=CMD_TYPE_MAKEMOVE;
@@ -528,7 +432,7 @@ void* UCI_SERVER(void* arg)
                     pthread_mutex_lock(&inputLock);
                     memcpy(retValueOfComputation, &command.go.perft_level , sizeof(command.go.perft_level));
                     // divide(command.go.depthValue);
-                    
+
                     CMD_CASE=CMD_TYPE_PERFT;
                     pthread_cond_broadcast(&inputCond);
                     pthread_mutex_unlock(&inputLock);
@@ -546,21 +450,13 @@ void* UCI_SERVER(void* arg)
                  *     searchWithClock(...);
                  * }
                  */
-
                 break;
-
-
             case CMD_STOP:
                 break;
             case CMD_QUIT:
-
-                return;
-
+                return (void*)1;
             default:
-
                 break;
         }
     }
-
-    
 }
