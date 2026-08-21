@@ -55,26 +55,26 @@ uint64_t generateXORforPiece(Pieces PIECE, uint64_t PIECE_BIT_MAP)
 uint64_t generateZorbistHashFromAGameState(GAME_STATE_STRUCT* gameState)
 {
     uint64_t _curr = 0;
-    GAME_STATE_STRUCT state = *(gameState);
+    uint64_t* GAME_STATE = gameState->GAME_STATE;
 
-    _curr ^= generateXORforPiece(WHITE_KING, state.GAME_STATE[WHITE_KING_OCCUPANCY]) ^
-             generateXORforPiece(WHITE_PAWN, state.GAME_STATE[WHITE_PAWN_OCCUPANCY]) ^
-             generateXORforPiece(WHITE_BISHOP, state.GAME_STATE[WHITE_BISHOP_OCCUPANCY]) ^
-             generateXORforPiece(WHITE_QUEEN, state.GAME_STATE[WHITE_QUEEN_OCCUPANCY]) ^
-             generateXORforPiece(WHITE_KNIGHT, state.GAME_STATE[WHITE_KNIGHT_OCCUPANCY]) ^
-             generateXORforPiece(WHITE_ROOK, state.GAME_STATE[WHITE_ROOK_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_KING, state.GAME_STATE[BLACK_KING_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_BISHOP, state.GAME_STATE[BLACK_BISHOP_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_KNIGHT, state.GAME_STATE[BLACK_KNIGHT_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_QUEEN, state.GAME_STATE[BLACK_QUEEN_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_PAWN, state.GAME_STATE[BLACK_PAWN_OCCUPANCY]) ^
-             generateXORforPiece(BLACK_ROOK ,state.GAME_STATE[BLACK_ROOK_OCCUPANCY]);
+    _curr ^= generateXORforPiece(WHITE_KING, GAME_STATE[WHITE_KING_OCCUPANCY]) ^
+             generateXORforPiece(WHITE_PAWN, GAME_STATE[WHITE_PAWN_OCCUPANCY]) ^
+             generateXORforPiece(WHITE_BISHOP, GAME_STATE[WHITE_BISHOP_OCCUPANCY]) ^
+             generateXORforPiece(WHITE_QUEEN, GAME_STATE[WHITE_QUEEN_OCCUPANCY]) ^
+             generateXORforPiece(WHITE_KNIGHT, GAME_STATE[WHITE_KNIGHT_OCCUPANCY]) ^
+             generateXORforPiece(WHITE_ROOK, GAME_STATE[WHITE_ROOK_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_KING, GAME_STATE[BLACK_KING_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_BISHOP, GAME_STATE[BLACK_BISHOP_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_KNIGHT, GAME_STATE[BLACK_KNIGHT_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_QUEEN, GAME_STATE[BLACK_QUEEN_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_PAWN, GAME_STATE[BLACK_PAWN_OCCUPANCY]) ^
+             generateXORforPiece(BLACK_ROOK ,GAME_STATE[BLACK_ROOK_OCCUPANCY]);
 
-    _curr ^= _globalZorbistHashing._zorbistCastlingNums[state.GAME_STATE[CASTLING_AVAILABLE]];
+    _curr ^= _globalZorbistHashing._zorbistCastlingNums[GAME_STATE[CASTLING_AVAILABLE]];
 
-    if (state.GAME_STATE[ENPASSANT_SQUARE] != NS)
+    if (GAME_STATE[ENPASSANT_SQUARE] != NS)
     {
-        _curr ^= _globalZorbistHashing._zobistFileNums[(state.GAME_STATE[ENPASSANT_SQUARE] % 8)];
+        _curr ^= _globalZorbistHashing._zobistFileNums[(GAME_STATE[ENPASSANT_SQUARE] % 8)];
     }
 
     return _curr;
@@ -101,7 +101,8 @@ void printPieceBitBoard(uint64_t bitboard, char piece)
 
 void printBoard(GAME_STATE_STRUCT* state)
 {
-    GAME_STATE_STRUCT temp=*(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
+    uint8_t*  _chessBoard = state->_chessBoard;
 
     for (int rank = 7; rank >= 0; rank--)
     {
@@ -109,7 +110,7 @@ void printBoard(GAME_STATE_STRUCT* state)
         {
             int sq = rank * 8 + file;
 
-            switch (temp._chessBoard[sq])
+            switch (_chessBoard[sq])
             {
             case BLACK_ROOK:
                 printf("r ");
@@ -158,20 +159,20 @@ void printBoard(GAME_STATE_STRUCT* state)
         printf("\n");
     }
 
-    printf("castling available %d%d%d%d\n" ,(temp.GAME_STATE[CASTLING_AVAILABLE]&(1<<3)),
-                                            (temp.GAME_STATE[CASTLING_AVAILABLE]&(1<<2)),
-                                            (temp.GAME_STATE[CASTLING_AVAILABLE]&(1<<1)),
-                                            (temp.GAME_STATE[CASTLING_AVAILABLE]&(1<<0)));
+    printf("castling available %d%d%d%d\n" ,(GAME_STATE[CASTLING_AVAILABLE]&(1<<3)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<2)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<1)),
+                                            (GAME_STATE[CASTLING_AVAILABLE]&(1<<0)));
 
-    printf("Side to Move %c\n", (temp.GAME_STATE[SIDE] == 6)?'b':'w');
-    if(temp.GAME_STATE[ENPASSANT_SQUARE]==ES){
+    printf("Side to Move %c\n", (GAME_STATE[SIDE] == 6)?'b':'w');
+    if(GAME_STATE[ENPASSANT_SQUARE]==ES){
         printf("Enpassant File ES\n");
     }else{
-        printf("Enpassant File %c%c\n", ((char)(temp.GAME_STATE[ENPASSANT_SQUARE]%8)+'a'), ((char)(temp.GAME_STATE[ENPASSANT_SQUARE]/8)+'1'));
+        printf("Enpassant File %c%c\n", ((char)(GAME_STATE[ENPASSANT_SQUARE]%8)+'a'), ((char)(GAME_STATE[ENPASSANT_SQUARE]/8)+'1'));
     }
 
-    printf("Full Move %d\n",(int)temp.GAME_STATE[NUMBER_FULL_MOVES]);
-    printf("HALF Move %d\n",(int)temp.GAME_STATE[NUMBER_HALF_MOVES]);
+    printf("Full Move %d\n",(int)GAME_STATE[NUMBER_FULL_MOVES]);
+    printf("HALF Move %d\n",(int)GAME_STATE[NUMBER_HALF_MOVES]);
 
 }
 
@@ -180,7 +181,7 @@ uint64_t perft(int depth ,GAME_STATE_STRUCT* state)
     if (depth == 0)
         return 1;
 
-    GAME_STATE_STRUCT temp= *(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
 
     MoveList moves = {0};
     generateMoveList(&moves,state);
@@ -213,7 +214,7 @@ __uint64_t perftBulk(int depth, GAME_STATE_STRUCT* state)
 
     MoveList moves = {0};
 
-    GAME_STATE_STRUCT temp= *(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
 
     generateMoveList(&moves,state);
 
@@ -287,79 +288,81 @@ uint64_t divideBulk(int depth ,GAME_STATE_STRUCT* state)
 
 void piecePuter(uint64_t PIECE_NUMBER, Pieces piece ,GAME_STATE_STRUCT* state)
 {
-    GAME_STATE_STRUCT temp= *(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
+    uint8_t* _chessBoard = state->_chessBoard;
 
     for (int i = 0; i < 64; i++)
     {
         if (PIECE_NUMBER & (1ULL << i))
         {
-            temp._chessBoard[i] = piece;
+            _chessBoard[i] = piece;
         }
     }
 }
 
 void emptyInitializationHelper(GAME_STATE_STRUCT* state)
 {
-    GAME_STATE_STRUCT temp = *state;
+    uint64_t* GAME_STATE = state->GAME_STATE;
+
     _globalZorbistHashing = generateZorbistNumbers();
 
-    temp.GAME_STATE[EVALUATION] = 1000;
+    GAME_STATE[EVALUATION] = 1000;
 
-    temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] = 0b0000000011111111000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000001111111100000000;
-    temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] = 0b1000000100000000000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] = 0b0100001000000000000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] = 0b0010010000000000000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[BLACK_KING_OCCUPANCY] = 0b0001000000000000000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] = 0b0000100000000000000000000000000000000000000000000000000000000000;
-    temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000010000001;
-    temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000001000010;
-    temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000100100;
-    temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000001000;
-    temp.GAME_STATE[WHITE_KING_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000010000;
+    GAME_STATE[BLACK_PAWN_OCCUPANCY] = 0b0000000011111111000000000000000000000000000000000000000000000000;
+    GAME_STATE[WHITE_PAWN_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000001111111100000000;
+    GAME_STATE[BLACK_ROOK_OCCUPANCY] = 0b1000000100000000000000000000000000000000000000000000000000000000;
+    GAME_STATE[BLACK_KNIGHT_OCCUPANCY] = 0b0100001000000000000000000000000000000000000000000000000000000000;
+    GAME_STATE[BLACK_BISHOP_OCCUPANCY] = 0b0010010000000000000000000000000000000000000000000000000000000000;
+    GAME_STATE[BLACK_KING_OCCUPANCY] = 0b0001000000000000000000000000000000000000000000000000000000000000;
+    GAME_STATE[BLACK_QUEEN_OCCUPANCY] = 0b0000100000000000000000000000000000000000000000000000000000000000;
+    GAME_STATE[WHITE_ROOK_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000010000001;
+    GAME_STATE[WHITE_KNIGHT_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000001000010;
+    GAME_STATE[WHITE_BISHOP_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000100100;
+    GAME_STATE[WHITE_QUEEN_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000001000;
+    GAME_STATE[WHITE_KING_OCCUPANCY] = 0b0000000000000000000000000000000000000000000000000000000000010000;
 
-    temp.GAME_STATE[TOTAL_OCCUPANCY] =
-        temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^ temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^
-        temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^ temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^
-        temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^ temp.GAME_STATE[BLACK_KING_OCCUPANCY] ^
-        temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] ^ temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^
-        temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^ temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^
-        temp.GAME_STATE[WHITE_KING_OCCUPANCY] ^ temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY];
+    GAME_STATE[TOTAL_OCCUPANCY] =
+        GAME_STATE[BLACK_PAWN_OCCUPANCY] ^ GAME_STATE[BLACK_ROOK_OCCUPANCY] ^
+        GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^ GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^
+        GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^ GAME_STATE[BLACK_KING_OCCUPANCY] ^
+        GAME_STATE[WHITE_PAWN_OCCUPANCY] ^ GAME_STATE[WHITE_ROOK_OCCUPANCY] ^
+        GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^ GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^
+        GAME_STATE[WHITE_KING_OCCUPANCY] ^ GAME_STATE[WHITE_BISHOP_OCCUPANCY];
 
-    temp.GAME_STATE[BLACK_OCCUPANCY] =
-        temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^ temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^
-        temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^ temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^
-        temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^ temp.GAME_STATE[BLACK_KING_OCCUPANCY];
+    GAME_STATE[BLACK_OCCUPANCY] =
+        GAME_STATE[BLACK_PAWN_OCCUPANCY] ^ GAME_STATE[BLACK_ROOK_OCCUPANCY] ^
+        GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^ GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^
+        GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^ GAME_STATE[BLACK_KING_OCCUPANCY];
 
-    temp.GAME_STATE[WHITE_OCCUPANCY] = temp.GAME_STATE[TOTAL_OCCUPANCY] ^ temp.GAME_STATE[BLACK_OCCUPANCY];
+    GAME_STATE[WHITE_OCCUPANCY] = GAME_STATE[TOTAL_OCCUPANCY] ^ GAME_STATE[BLACK_OCCUPANCY];
 
-    temp.GAME_STATE[CASTLING_AVAILABLE] = 0b00001111;
-    temp.GAME_STATE[SIDE] = 0;
+    GAME_STATE[CASTLING_AVAILABLE] = 0b00001111;
+    GAME_STATE[SIDE] = 0;
 
-    temp.GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(state);
-    temp.GAME_STATE[ENPASSANT_SQUARE] = NS;
-    temp.GAME_STATE[NUMBER_FULL_MOVES] = 1;
-    temp.GAME_STATE[NUMBER_HALF_MOVES] = 0;
+    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(state);
+    GAME_STATE[ENPASSANT_SQUARE] = NS;
+    GAME_STATE[NUMBER_FULL_MOVES] = 1;
+    GAME_STATE[NUMBER_HALF_MOVES] = 0;
 }
 
 void initializeHelperFunc(GAME_STATE_STRUCT* state){
-    GAME_STATE_STRUCT temp=*(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
     pieceInitializer();
 
-    piecePuter(temp.GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN
+    piecePuter(GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN
         ,state);
-    piecePuter(temp.GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK,state);
-    piecePuter(temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP,state);
-    piecePuter(temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY], BLACK_KNIGHT,state);
-    piecePuter(temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY], BLACK_QUEEN,state);
-    piecePuter(temp.GAME_STATE[BLACK_KING_OCCUPANCY], BLACK_KING,state);
-    piecePuter(temp.GAME_STATE[WHITE_PAWN_OCCUPANCY], WHITE_PAWN,state);
-    piecePuter(temp.GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK,state);
-    piecePuter(temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP,state);
-    piecePuter(temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY], WHITE_KNIGHT,state);
-    piecePuter(temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN,state);
-    piecePuter(temp.GAME_STATE[WHITE_KING_OCCUPANCY], WHITE_KING,state);
-    piecePuter(~(temp.GAME_STATE[TOTAL_OCCUPANCY]), ES,state);
+    piecePuter(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK,state);
+    piecePuter(GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP,state);
+    piecePuter(GAME_STATE[BLACK_KNIGHT_OCCUPANCY], BLACK_KNIGHT,state);
+    piecePuter(GAME_STATE[BLACK_QUEEN_OCCUPANCY], BLACK_QUEEN,state);
+    piecePuter(GAME_STATE[BLACK_KING_OCCUPANCY], BLACK_KING,state);
+    piecePuter(GAME_STATE[WHITE_PAWN_OCCUPANCY], WHITE_PAWN,state);
+    piecePuter(GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK,state);
+    piecePuter(GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP,state);
+    piecePuter(GAME_STATE[WHITE_KNIGHT_OCCUPANCY], WHITE_KNIGHT,state);
+    piecePuter(GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN,state);
+    piecePuter(GAME_STATE[WHITE_KING_OCCUPANCY], WHITE_KING,state);
+    piecePuter(~(GAME_STATE[TOTAL_OCCUPANCY]), ES,state);
 }
 
 void initializer(GAME_STATE_STRUCT* state)
@@ -370,7 +373,8 @@ void initializer(GAME_STATE_STRUCT* state)
 
 __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
 {
-    GAME_STATE_STRUCT temp=*(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
+    uint8_t* _chessBoard = state->_chessBoard;
     char promotionPie[5] = {'\0', 'q', 'r', 'b', 'n'};
     __uint64_t result = 0;
 
@@ -383,10 +387,10 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
     bool isEnpassant = false;
     bool isCastle = false;
 
-    Square oldEnpassantSquare = (Square)temp.GAME_STATE[ENPASSANT_SQUARE];
+    Square oldEnpassantSquare = (Square)GAME_STATE[ENPASSANT_SQUARE];
 
-    Pieces movingPiece =(Pieces) temp._chessBoard[src];
-    Pieces capturedPiece =(Pieces) temp._chessBoard[dest];
+    Pieces movingPiece =(Pieces) _chessBoard[src];
+    Pieces capturedPiece =(Pieces) _chessBoard[dest];
 
     if ((movingPiece == WHITE_KING || movingPiece == BLACK_KING) &&
         ((src == E1 && (dest == G1 || dest == C1)) ||
@@ -395,7 +399,7 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
         isCastle = true;
     }
 
-   temp.GAME_STATE[ENPASSANT_SQUARE] = NS;
+   GAME_STATE[ENPASSANT_SQUARE] = NS;
 
     if (movingPiece == WHITE_PAWN &&
         dest == oldEnpassantSquare &&
@@ -417,94 +421,94 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
         src >= A7 && src <= H7 &&
         dest >= A5 && dest <= H5)
     {
-       temp.GAME_STATE[ENPASSANT_SQUARE] = (Square)(src - 8);
+       GAME_STATE[ENPASSANT_SQUARE] = (Square)(src - 8);
     }
     else if (movingPiece == WHITE_PAWN &&
              src >= A2 && src <= H2 &&
              dest >= A4 && dest <= H4)
     {
-       temp.GAME_STATE[ENPASSANT_SQUARE] = (Square)(src + 8);
+       GAME_STATE[ENPASSANT_SQUARE] = (Square)(src + 8);
     }
 
     result |= ((__uint64_t)src) << 16;
     result |= ((__uint64_t)dest) << 8;
-    result |= ((__uint64_t)(uint8_t)temp._chessBoard[src]) << 40;
-    result |= ((__uint64_t)(uint8_t)temp._chessBoard[dest]) << 32;
+    result |= ((__uint64_t)(uint8_t)_chessBoard[src]) << 40;
+    result |= ((__uint64_t)(uint8_t)_chessBoard[dest]) << 32;
 
     switch (movingPiece)
     {
         case WHITE_PAWN:
-           temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case WHITE_KNIGHT:
-           temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case WHITE_BISHOP:
-           temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case WHITE_ROOK:
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
 
             if (src == A1)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
 
             else if (src == H1)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
             break;
 
         case WHITE_QUEEN:
-           temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case WHITE_KING:
-           temp.GAME_STATE[WHITE_KING_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b0011;
+           GAME_STATE[WHITE_KING_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[CASTLING_AVAILABLE] &= 0b0011;
             break;
 
         case BLACK_PAWN:
-           temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case BLACK_KNIGHT:
-           temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case BLACK_BISHOP:
-           temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case BLACK_ROOK:
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
 
             if (src == A8)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
 
             if (src == H8)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
             break;
 
         case BLACK_QUEEN:
-           temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
             break;
 
         case BLACK_KING:
-           temp.GAME_STATE[BLACK_KING_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
-           temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1100;
+           GAME_STATE[BLACK_KING_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << src) | (1ULL << dest);
+           GAME_STATE[CASTLING_AVAILABLE] &= 0b1100;
             break;
 
         default:
@@ -514,65 +518,65 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
     switch (capturedPiece)
     {
         case WHITE_PAWN:
-           temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case WHITE_KNIGHT:
-           temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case WHITE_BISHOP:
-           temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case WHITE_ROOK:
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
 
             if (dest == A1)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1011;
 
             if (dest == H1)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b0111;
             break;
 
         case WHITE_QUEEN:
-           temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case BLACK_PAWN:
-           temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case BLACK_KNIGHT:
-           temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_KNIGHT_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case BLACK_BISHOP:
-           temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_BISHOP_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case BLACK_ROOK:
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
 
             if (dest == A8)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1110;
 
             if (dest == H8)
-               temp.GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
+               GAME_STATE[CASTLING_AVAILABLE] &= 0b1101;
             break;
 
         case BLACK_QUEEN:
-           temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << dest);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_QUEEN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << dest);
             break;
 
         case WHITE_KING:
@@ -593,8 +597,8 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
 
             result |= (uint64_t)BLACK_PAWN << 24;
 
-           temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+           GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
         }
         else
         {
@@ -602,70 +606,70 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
 
             result |= (uint64_t)WHITE_PAWN << 24;
 
-           temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+           GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << capturedPawnSquare);
         }
 
         result |= (uint8_t)capturedPawnSquare;
-        temp._chessBoard[capturedPawnSquare] = ES;
+        _chessBoard[capturedPawnSquare] = ES;
     }
 
-    temp._chessBoard[src] = ES;
-    temp._chessBoard[dest] = movingPiece;
+    _chessBoard[src] = ES;
+    _chessBoard[dest] = movingPiece;
 
     if (isPromotion)
     {
         if (movingPiece == WHITE_PAWN)
         {
-           temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[WHITE_PAWN_OCCUPANCY] ^= (1ULL << dest);
 
             switch (promotion)
             {
                 case 'q':
-                    temp._chessBoard[dest] = WHITE_QUEEN;
-                   temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = WHITE_QUEEN;
+                   GAME_STATE[WHITE_QUEEN_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'r':
-                    temp._chessBoard[dest] = WHITE_ROOK;
-                   temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = WHITE_ROOK;
+                   GAME_STATE[WHITE_ROOK_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'b':
-                    temp._chessBoard[dest] = WHITE_BISHOP;
-                   temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = WHITE_BISHOP;
+                   GAME_STATE[WHITE_BISHOP_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'n':
-                    temp._chessBoard[dest] = WHITE_KNIGHT;
-                   temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = WHITE_KNIGHT;
+                   GAME_STATE[WHITE_KNIGHT_OCCUPANCY] |= (1ULL << dest);
                     break;
             }
         }
         else if (movingPiece == BLACK_PAWN)
         {
-           temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
+           GAME_STATE[BLACK_PAWN_OCCUPANCY] ^= (1ULL << dest);
 
             switch (promotion)
             {
                 case 'q':
-                    temp._chessBoard[dest] = BLACK_QUEEN;
-                   temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = BLACK_QUEEN;
+                   GAME_STATE[BLACK_QUEEN_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'r':
-                    temp._chessBoard[dest] = BLACK_ROOK;
-                   temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = BLACK_ROOK;
+                   GAME_STATE[BLACK_ROOK_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'b':
-                    temp._chessBoard[dest] = BLACK_BISHOP;
-                   temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = BLACK_BISHOP;
+                   GAME_STATE[BLACK_BISHOP_OCCUPANCY] |= (1ULL << dest);
                     break;
 
                 case 'n':
-                    temp._chessBoard[dest] = BLACK_KNIGHT;
-                   temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] |= (1ULL << dest);
+                    _chessBoard[dest] = BLACK_KNIGHT;
+                   GAME_STATE[BLACK_KNIGHT_OCCUPANCY] |= (1ULL << dest);
                     break;
             }
         }
@@ -679,56 +683,56 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
         {
             result |= 0x01;
 
-            temp._chessBoard[H1] = ES;
-            temp._chessBoard[F1] = WHITE_ROOK;
+            _chessBoard[H1] = ES;
+            _chessBoard[F1] = WHITE_ROOK;
 
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << H1);
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << F1);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << H1);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << F1);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << H1);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << F1);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << H1);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << F1);
         }
         else if (src == E1 && dest == C1)
         {
             result |= 0x02;
 
-            temp._chessBoard[A1] = ES;
-            temp._chessBoard[D1] = WHITE_ROOK;
+            _chessBoard[A1] = ES;
+            _chessBoard[D1] = WHITE_ROOK;
 
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << A1);
-           temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << D1);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << A1);
-           temp.GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << D1);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << A1);
+           GAME_STATE[WHITE_ROOK_OCCUPANCY] ^= (1ULL << D1);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << A1);
+           GAME_STATE[WHITE_OCCUPANCY] ^= (1ULL << D1);
         }
         else if (src == E8 && dest == G8)
         {
             result |= 0x04;
 
-            temp._chessBoard[H8] = ES;
-            temp._chessBoard[F8] = BLACK_ROOK;
+            _chessBoard[H8] = ES;
+            _chessBoard[F8] = BLACK_ROOK;
 
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << H8);
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << F8);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << H8);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << F8);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << H8);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << F8);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << H8);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << F8);
         }
         else if (src == E8 && dest == C8)
         {
             result |= 0x08;
 
-            temp._chessBoard[A8] = ES;
-            temp._chessBoard[D8] = BLACK_ROOK;
+            _chessBoard[A8] = ES;
+            _chessBoard[D8] = BLACK_ROOK;
 
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << A8);
-           temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << D8);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << A8);
-           temp.GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << D8);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << A8);
+           GAME_STATE[BLACK_ROOK_OCCUPANCY] ^= (1ULL << D8);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << A8);
+           GAME_STATE[BLACK_OCCUPANCY] ^= (1ULL << D8);
         }
     }
 
-   temp.GAME_STATE[SIDE] ^= 6;
-   temp.GAME_STATE[TOTAL_OCCUPANCY] =
-       temp.GAME_STATE[WHITE_OCCUPANCY] |
-       temp.GAME_STATE[BLACK_OCCUPANCY];
+   GAME_STATE[SIDE] ^= 6;
+   GAME_STATE[TOTAL_OCCUPANCY] =
+       GAME_STATE[WHITE_OCCUPANCY] |
+       GAME_STATE[BLACK_OCCUPANCY];
 
     return result;
 }
@@ -736,7 +740,7 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
 
 int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 {
-    GAME_STATE_STRUCT temp =*(state);
+    uint64_t* GAME_STATE = state->GAME_STATE;
     FEN_STRING _string1;
 
     char copy[UCI_LINE_SIZE];
@@ -784,27 +788,27 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 
     _globalZorbistHashing = generateZorbistNumbers();
 
-    temp.GAME_STATE[EVALUATION] = 1000;
+    GAME_STATE[EVALUATION] = 1000;
 
-    temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] = 0;
-    temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] = 0;
-    temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] = 0;
-    temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] = 0;
-    temp.GAME_STATE[BLACK_KING_OCCUPANCY] = 0;
-    temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] = 0;
-    temp.GAME_STATE[WHITE_KING_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_PAWN_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_PAWN_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_ROOK_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_KNIGHT_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_BISHOP_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_KING_OCCUPANCY] = 0;
+    GAME_STATE[BLACK_QUEEN_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_ROOK_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_KNIGHT_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_BISHOP_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_QUEEN_OCCUPANCY] = 0;
+    GAME_STATE[WHITE_KING_OCCUPANCY] = 0;
 
-    temp.GAME_STATE[CASTLING_ABILITY] = 0;
-    temp.GAME_STATE[SIDE] = 0;
-    temp.GAME_STATE[ZORBIST_HASH] = 0;
-    temp.GAME_STATE[ENPASSANT_SQUARE] = NS;
-    temp.GAME_STATE[NUMBER_FULL_MOVES] = 1;
-    temp.GAME_STATE[NUMBER_HALF_MOVES] = 0;
+    GAME_STATE[CASTLING_ABILITY] = 0;
+    GAME_STATE[SIDE] = 0;
+    GAME_STATE[ZORBIST_HASH] = 0;
+    GAME_STATE[ENPASSANT_SQUARE] = NS;
+    GAME_STATE[NUMBER_FULL_MOVES] = 1;
+    GAME_STATE[NUMBER_HALF_MOVES] = 0;
 
     int _rankCounter = 8;
     int _currPosition = 0;
@@ -837,52 +841,52 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 
             break;
         case 'k':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_KING_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_KING_OCCUPANCY], _rankCounter, _currPosition);
             break;
         case 'K':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_KING_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_KING_OCCUPANCY], _rankCounter, _currPosition);
             break;
         case 'q':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_QUEEN_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'Q':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_QUEEN_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'p':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_PAWN_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_PAWN_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'P':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_PAWN_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_PAWN_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'b':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_BISHOP_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'B':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_BISHOP_OCCUPANCY], _rankCounter, _currPosition);
 
 
             break;
         case 'n':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_KNIGHT_OCCUPANCY], _rankCounter, _currPosition);
 
             break;
         case 'N':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_KNIGHT_OCCUPANCY], _rankCounter, _currPosition);
 
 
             break;
         case 'r':
-            SET_BIT_PIECE(temp.GAME_STATE[BLACK_ROOK_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[BLACK_ROOK_OCCUPANCY], _rankCounter, _currPosition);
 
 
             break;
         case 'R':
-            SET_BIT_PIECE(temp.GAME_STATE[WHITE_ROOK_OCCUPANCY], _rankCounter, _currPosition);
+            SET_BIT_PIECE(GAME_STATE[WHITE_ROOK_OCCUPANCY], _rankCounter, _currPosition);
             break;
         default:
             return -1;
@@ -896,20 +900,20 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 
         return -1;
     }
-    temp.GAME_STATE[TOTAL_OCCUPANCY] =
-        temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] | temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] |
-        temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] | temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] |
-        temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] | temp.GAME_STATE[BLACK_KING_OCCUPANCY] |
-        temp.GAME_STATE[WHITE_PAWN_OCCUPANCY] | temp.GAME_STATE[WHITE_ROOK_OCCUPANCY] |
-        temp.GAME_STATE[WHITE_KNIGHT_OCCUPANCY] | temp.GAME_STATE[WHITE_QUEEN_OCCUPANCY] |
-        temp.GAME_STATE[WHITE_KING_OCCUPANCY] | temp.GAME_STATE[WHITE_BISHOP_OCCUPANCY];
+    GAME_STATE[TOTAL_OCCUPANCY] =
+        GAME_STATE[BLACK_PAWN_OCCUPANCY] | GAME_STATE[BLACK_ROOK_OCCUPANCY] |
+        GAME_STATE[BLACK_KNIGHT_OCCUPANCY] | GAME_STATE[BLACK_BISHOP_OCCUPANCY] |
+        GAME_STATE[BLACK_QUEEN_OCCUPANCY] | GAME_STATE[BLACK_KING_OCCUPANCY] |
+        GAME_STATE[WHITE_PAWN_OCCUPANCY] | GAME_STATE[WHITE_ROOK_OCCUPANCY] |
+        GAME_STATE[WHITE_KNIGHT_OCCUPANCY] | GAME_STATE[WHITE_QUEEN_OCCUPANCY] |
+        GAME_STATE[WHITE_KING_OCCUPANCY] | GAME_STATE[WHITE_BISHOP_OCCUPANCY];
 
-    temp.GAME_STATE[BLACK_OCCUPANCY] =
-        temp.GAME_STATE[BLACK_PAWN_OCCUPANCY] | temp.GAME_STATE[BLACK_ROOK_OCCUPANCY] |
-        temp.GAME_STATE[BLACK_KNIGHT_OCCUPANCY] | temp.GAME_STATE[BLACK_BISHOP_OCCUPANCY] |
-        temp.GAME_STATE[BLACK_QUEEN_OCCUPANCY] | temp.GAME_STATE[BLACK_KING_OCCUPANCY];
+    GAME_STATE[BLACK_OCCUPANCY] =
+        GAME_STATE[BLACK_PAWN_OCCUPANCY] | GAME_STATE[BLACK_ROOK_OCCUPANCY] |
+        GAME_STATE[BLACK_KNIGHT_OCCUPANCY] | GAME_STATE[BLACK_BISHOP_OCCUPANCY] |
+        GAME_STATE[BLACK_QUEEN_OCCUPANCY] | GAME_STATE[BLACK_KING_OCCUPANCY];
 
-    temp.GAME_STATE[WHITE_OCCUPANCY] = temp.GAME_STATE[TOTAL_OCCUPANCY] ^ temp.GAME_STATE[BLACK_OCCUPANCY];
+    GAME_STATE[WHITE_OCCUPANCY] = GAME_STATE[TOTAL_OCCUPANCY] ^ GAME_STATE[BLACK_OCCUPANCY];
 
 
     if(_string1.sideTOMove !='w' && _string1.sideTOMove !='b' )
@@ -920,17 +924,17 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
     }
 
 
-    temp.GAME_STATE[SIDE] = (_string1.sideTOMove == 'w') ? 0 : 6;
+    GAME_STATE[SIDE] = (_string1.sideTOMove == 'w') ? 0 : 6;
 
 
 
     if (strcmp(_string1.castlingAbility , "-")==0)
     {
-        temp.GAME_STATE[CASTLING_AVAILABLE] = 0;
+        GAME_STATE[CASTLING_AVAILABLE] = 0;
     }
     else
     {
-            temp.GAME_STATE[CASTLING_AVAILABLE] = 0;
+            GAME_STATE[CASTLING_AVAILABLE] = 0;
 
             if (strcmp(_string1.castlingAbility, "-") != 0)
             {
@@ -939,19 +943,19 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
                     switch (_string1.castlingAbility[i])
                     {
                         case 'K':
-                            temp.GAME_STATE[CASTLING_AVAILABLE] |= 1 << 3;
+                            GAME_STATE[CASTLING_AVAILABLE] |= 1 << 3;
                             break;
 
                         case 'Q':
-                            temp.GAME_STATE[CASTLING_AVAILABLE] |= 1 << 2;
+                            GAME_STATE[CASTLING_AVAILABLE] |= 1 << 2;
                             break;
 
                         case 'k':
-                            temp.GAME_STATE[CASTLING_AVAILABLE] |= 1 << 1;
+                            GAME_STATE[CASTLING_AVAILABLE] |= 1 << 1;
                             break;
 
                         case 'q':
-                            temp.GAME_STATE[CASTLING_AVAILABLE] |= 1 << 0;
+                            GAME_STATE[CASTLING_AVAILABLE] |= 1 << 0;
                             break;
 
                         default:
@@ -964,7 +968,7 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 
     if (strcmp(_string1.enpassantTargetSquare ,"-")==0)
     {
-        temp.GAME_STATE[ENPASSANT_SQUARE] = NS;
+        GAME_STATE[ENPASSANT_SQUARE] = NS;
 
     }
     else
@@ -977,7 +981,7 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
         }
         int file = _string1.enpassantTargetSquare[0] - 'a';
         int rank = _string1.enpassantTargetSquare[1] - '1';
-        temp.GAME_STATE[ENPASSANT_SQUARE] = (Square)(file + rank * 8);
+        GAME_STATE[ENPASSANT_SQUARE] = (Square)(file + rank * 8);
     }
 
     char *end;
@@ -994,7 +998,7 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
         return -1;
     }
 
-    temp.GAME_STATE[NUMBER_HALF_MOVES] = value;
+    GAME_STATE[NUMBER_HALF_MOVES] = value;
 
 
 
@@ -1011,20 +1015,20 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
 
         return -1;
     }
-    if(!(__builtin_popcountll(temp.GAME_STATE[BLACK_KING_OCCUPANCY])==1)){
+    if(!(__builtin_popcountll(GAME_STATE[BLACK_KING_OCCUPANCY])==1)){
                 printf("problem 9");
 
         return -1;
     }
-    if(!(__builtin_popcountll(temp.GAME_STATE[WHITE_KING_OCCUPANCY])==1)){
+    if(!(__builtin_popcountll(GAME_STATE[WHITE_KING_OCCUPANCY])==1)){
                        printf("problem 10");
 
         return -1;
     }
-    temp.GAME_STATE[NUMBER_FULL_MOVES] = value;
-    temp.GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(&temp);
+    GAME_STATE[NUMBER_FULL_MOVES] = value;
+    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(state);
 
-    initializeHelperFunc(&temp);
+    initializeHelperFunc(state);
 
     return 1;
 }
