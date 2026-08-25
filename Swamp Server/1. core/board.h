@@ -253,3 +253,18 @@ void initializeNewGameFromStruct(GAME_STATE_STRUCT*);
 void piecePuterWithBoard(uint64_t PIECE_NUMBER, Pieces piece ,uint8_t _chessBoard[64] );
 GAME_STATE_STRUCT copyState();
 void doMultiThreadPerft();
+
+
+
+void pieceInitializer();
+void generatePreCalculatedKingAttack();
+void generatePreCalculateBlackPawnAttck();
+void generatePreCalculatedWhitePawnAttack();
+void generatePreCalculatedKnightAttack();
+void initSliderAttack();
+uint64_t set_occupancy(int index, int bits_in_mask, uint64_t attack_mask);
+uint64_t rook_attacks_on_the_fly(int square, uint64_t block);
+uint64_t bishop_attacks_on_the_fly(int square, uint64_t block);
+void initMasks();
+void generateBishopMask();
+void generateRookMask();

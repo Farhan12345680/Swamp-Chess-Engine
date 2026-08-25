@@ -1180,3 +1180,398 @@ void doMultiThreadPerft(void* address )
 
     }
 }
+
+
+
+
+
+
+void generateRookMask()
+{
+    for (int i = 1; i < 9; i++)
+    {
+        for (int j = 1; j < 9; j++)
+        {
+            int _idx = (i - 1) * 8 + (j - 1);
+            uint64_t _point = 1ULL << _idx;
+            uint64_t _mask = 0;
+
+            for (int k = i + 1; k < 8; k++)
+            {
+                _mask |= _point << (8 * (abs(k - i)));
+            }
+            for (int k = i - 1; k > 1; k--)
+            {
+                _mask |= _point >> (8 * (abs(k - i)));
+            }
+            for (int k = j + 1; k < 8; k++)
+            {
+                _mask |= _point << ((abs(k - j)));
+            }
+            for (int k = j - 1; k > 1; k--)
+            {
+                _mask |= _point >> ((abs(k - j)));
+            }
+
+            rookMask[_idx] = _mask;
+        }
+    }
+}
+
+void generateBishopMask()
+{
+    for (int row = 1; row < 9; row++)
+    {
+        for (int column = 1; column < 9; column++)
+        {
+            int _idx = (row - 1) * 8 + (column - 1);
+            uint64_t _point = 1ULL << _idx;
+            uint64_t _mask = 0;
+
+            for (int k = row + 1, l = column - 1; k < 8 && l > 1; k++, l--)
+            {
+                _mask |= _point << (7 * (abs(k - row)));
+            }
+            for (int k = row + 1, l = column + 1; k < 8 && l < 8; k++, l++)
+            {
+                _mask |= _point << (9 * (abs(k - row)));
+            }
+            for (int k = row - 1, l = column - 1; k > 1 && l > 1; k--, l--)
+            {
+                _mask |= _point >> (9 * (abs(k - row)));
+            }
+            for (int k = row - 1, l = column + 1; k > 1 && l < 8; k--, l++)
+            {
+                _mask |= _point >> (7 * (abs(k - row)));
+            }
+
+            bishopMask[_idx] = _mask;
+        }
+    }
+}
+
+void initMasks()
+{
+    generateRookMask();
+    generateBishopMask();
+}
+
+
+uint64_t bishop_attacks_on_the_fly(int square, uint64_t block)
+{
+    uint64_t attacks = 0ULL;
+
+    int r, f;
+
+    int tr = square / 8;
+    int tf = square % 8;
+
+    for (r = tr + 1, f = tf + 1; r <= 7 && f <= 7; r++, f++)
+    {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & block)
+            break;
+    }
+
+    for (r = tr - 1, f = tf + 1; r >= 0 && f <= 7; r--, f++)
+    {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & block)
+            break;
+    }
+
+    for (r = tr + 1, f = tf - 1; r <= 7 && f >= 0; r++, f--)
+    {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & block)
+            break;
+    }
+
+    for (r = tr - 1, f = tf - 1; r >= 0 && f >= 0; r--, f--)
+    {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & block)
+            break;
+    }
+
+    return attacks;
+}
+
+uint64_t rook_attacks_on_the_fly(int square, uint64_t block)
+{
+    uint64_t attacks = 0ULL;
+
+    int r, f;
+
+    int tr = square / 8;
+    int tf = square % 8;
+
+    for (r = tr + 1; r <= 7; r++)
+    {
+        attacks |= (1ULL << (r * 8 + tf));
+        if ((1ULL << (r * 8 + tf)) & block)
+            break;
+    }
+
+    for (r = tr - 1; r >= 0; r--)
+    {
+        attacks |= (1ULL << (r * 8 + tf));
+        if ((1ULL << (r * 8 + tf)) & block)
+            break;
+    }
+
+    for (f = tf + 1; f <= 7; f++)
+    {
+        attacks |= (1ULL << (tr * 8 + f));
+        if ((1ULL << (tr * 8 + f)) & block)
+            break;
+    }
+
+    for (f = tf - 1; f >= 0; f--)
+    {
+        attacks |= (1ULL << (tr * 8 + f));
+        if ((1ULL << (tr * 8 + f)) & block)
+            break;
+    }
+
+    return attacks;
+}
+
+uint64_t set_occupancy(int index, int bits_in_mask, uint64_t attack_mask)
+{
+    uint64_t occupancy = 0ULL;
+
+    for (int count = 0; count < bits_in_mask; count++)
+    {
+        int square = __builtin_ctzll(attack_mask);
+
+        attack_mask &= (attack_mask - 1);
+
+        if (index & (1 << count))
+            occupancy |= (1ULL << square);
+    }
+
+    return occupancy;
+}
+
+void initSliderAttack()
+{
+    initMasks();
+    {
+        for (int square = 0; square < 64; square++)
+        {
+
+            uint64_t attack_mask = bishopMask[square];
+
+            int relevant_bits_count = __builtin_popcountll(attack_mask);
+
+            int occupancy_indicies = (1 << relevant_bits_count);
+
+            for (int index = 0; index < occupancy_indicies; index++)
+            {
+
+                uint64_t occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+
+                int magic_index = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
+
+                bishopAttacks[square][magic_index] = bishop_attacks_on_the_fly(square, occupancy);
+            }
+        }
+    }
+
+    {
+        for (int square = 0; square < 64; square++)
+        {
+
+            uint64_t attack_mask = rookMask[square];
+
+            int relevant_bits_count = __builtin_popcountll(attack_mask);
+
+            int occupancy_indicies = (1 << relevant_bits_count);
+
+            for (int index = 0; index < occupancy_indicies; index++)
+            {
+
+                {
+                    uint64_t occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+
+                    int magic_index = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
+
+                    rookAttacks[square][magic_index] = rook_attacks_on_the_fly(square, occupancy);
+                }
+            }
+        }
+    }
+}
+
+void generatePreCalculatedKnightAttack()
+{
+    for (int i = 1; i <= 8; i++)
+    {
+        for (int j = 1; j <= 8; j++)
+        {
+            int _idx = (i - 1) * 8 + ((j - 1));
+            knightTable[_idx] = 0;
+            uint64_t _curr = 1ULL << _idx;
+
+            if ((i - 2) > 0 && (j - 1) > 0)
+            {
+                knightTable[_idx] |= (_curr >> 17);
+            }
+            if ((i - 2) > 0 && (j + 1) < 9)
+            {
+                knightTable[_idx] |= (_curr >> 15);
+            }
+            if ((i + 2) < 9 && (j - 1) > 0)
+            {
+                knightTable[_idx] |= (_curr << 15);
+            }
+            if ((i + 2) < 9 && (j + 1) < 9)
+            {
+                knightTable[_idx] |= (_curr << 17);
+            }
+            if ((j - 2) > 0 && (i - 1) > 0)
+            {
+                knightTable[_idx] |= (_curr >> 10);
+            }
+            if ((j - 2) > 0 && (i + 1) < 9)
+            {
+                knightTable[_idx] |= (_curr << 6);
+            }
+            if ((j + 2) < 9 && (i - 1) > 0)
+            {
+                knightTable[_idx] |= (_curr >> 6);
+            }
+            if ((j + 2) < 9 && (i + 1) < 9)
+            {
+                knightTable[_idx] |= (_curr << 10);
+            }
+        }
+    }
+}
+
+void generatePreCalculatedWhitePawnAttack()
+{
+    for (int i = 0; i <= 7; i++)
+    {
+        for (int j = 0; j <= 7; j++)
+        {
+            int _idx = (i) * 8 + ((j));
+            whitePawnTable[_idx] = 0;
+            uint64_t _curr = 1ULL << _idx;
+
+            if ((j) > 0)
+            {
+                whitePawnTable[_idx] |= (_curr << 7);
+            }
+            if ((j) < 7)
+            {
+                whitePawnTable[_idx] |= (_curr << 9);
+            }
+        }
+    }
+}
+
+void generatePreCalculateBlackPawnAttck()
+{
+    for (int i = 0; i <= 7; i++)
+    {
+        for (int j = 0; j <= 7; j++)
+        {
+            int _idx = (i) * 8 + ((j));
+            blackPawnTable[_idx] = 0;
+            uint64_t _curr = 1ULL << _idx;
+
+            if (j > 0)
+                blackPawnTable[_idx] |= _curr >> 9;
+
+            if (j < 7)
+                blackPawnTable[_idx] |= _curr >> 7;
+        }
+    }
+}
+
+void generatePreCalculatedKingAttack()
+{
+    for (int i = 1; i <= 8; i++)
+    {
+        for (int j = 1; j <= 8; j++)
+        {
+            int _idx = (i - 1) * 8 + ((j - 1));
+
+            kingTable[_idx] = 0;
+            uint64_t _curr = 1ULL << _idx;
+
+            if ((i - 1) > 0 && (j - 1) > 0)
+            {
+                kingTable[_idx] |= (_curr >> 9);
+            }
+            if ((i - 1) > 0 && (j + 1) < 9)
+            {
+                kingTable[_idx] |= (_curr >> 7);
+            }
+            if ((i - 1) > 0)
+            {
+                kingTable[_idx] |= (_curr >> 8);
+            }
+            if ((i + 1) < 9 && (j - 1) > 0)
+            {
+                kingTable[_idx] |= (_curr << 7);
+            }
+            if ((i + 1) < 9 && (j + 1) < 9)
+            {
+                kingTable[_idx] |= (_curr << 9);
+            }
+            if ((i + 1) < 9)
+            {
+                kingTable[_idx] |= (_curr << 8);
+            }
+            if ((j - 1) > 0)
+            {
+                kingTable[_idx] |= (_curr >> 1);
+            }
+            if ((j + 1) < 9)
+            {
+                kingTable[_idx] |= (_curr << 1);
+            }
+        }
+    }
+}
+
+void pieceInitializer()
+{
+    helperArr[ES][0]=NO_PIECE;
+    helperArr[ES][1]=NO_PIECE;
+    helperArr[BLACK_PAWN][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_PAWN][1]=BLACK_PAWN_OCCUPANCY;
+    helperArr[BLACK_KNIGHT][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_KNIGHT][1]=BLACK_KNIGHT_OCCUPANCY;
+    helperArr[BLACK_BISHOP][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_BISHOP][1]=BLACK_BISHOP_OCCUPANCY;
+    helperArr[BLACK_ROOK][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_ROOK][1]=BLACK_ROOK_OCCUPANCY;
+    helperArr[BLACK_QUEEN][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_QUEEN][1]=BLACK_QUEEN_OCCUPANCY;
+    helperArr[BLACK_KING][0]=BLACK_OCCUPANCY;
+    helperArr[BLACK_KING][1]=BLACK_KING_OCCUPANCY;
+    helperArr[WHITE_PAWN][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_PAWN][1]=WHITE_PAWN_OCCUPANCY;
+    helperArr[WHITE_KNIGHT][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_KNIGHT][1]=WHITE_KNIGHT_OCCUPANCY;
+    helperArr[WHITE_BISHOP][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_BISHOP][1]=WHITE_BISHOP_OCCUPANCY;
+    helperArr[WHITE_ROOK][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_ROOK][1]=WHITE_ROOK_OCCUPANCY;
+    helperArr[WHITE_QUEEN][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_QUEEN][1]=WHITE_QUEEN_OCCUPANCY;
+    helperArr[WHITE_KING][0]=WHITE_OCCUPANCY;
+    helperArr[WHITE_KING][1]=WHITE_KING_OCCUPANCY;
+    generateRookMask();
+    generateBishopMask();
+
+    initSliderAttack();
+    generatePreCalculatedKnightAttack();
+    generatePreCalculatedWhitePawnAttack();
+    generatePreCalculateBlackPawnAttck();
+    generatePreCalculatedKingAttack();
+}
