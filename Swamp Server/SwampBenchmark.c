@@ -5,10 +5,11 @@
 
 
 int main(){
+        getLogicalThreadCount();
         GAME_STATE_STRUCT state={0};
 
         initializer(&state);
-        uint64_t perft1=divideBulk(7 , &state);
+        uint64_t perft1=divideBulk(7 );
 
         // divide(3);
 

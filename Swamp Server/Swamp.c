@@ -20,6 +20,7 @@
 
 
 int main(){
+    getLogicalThreadCount();    
     pthread_t thread1;
     pthread_create(&thread1,NULL , EngineHandler ,(void*)retValueOfComputation);
     pthread_t thread2 ;

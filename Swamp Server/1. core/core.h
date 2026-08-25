@@ -14,7 +14,6 @@
 #endif
 
 
-extern GAME_STATE_STRUCT globalGameStruct;
 
 
 #ifdef MULTITHREAD_ENGINE
