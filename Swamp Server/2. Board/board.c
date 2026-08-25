@@ -1,6 +1,8 @@
 #include "../1. core/board.h"
+#include <threads.h>
 
-
+extern thread_local uint64_t GAME_STATE[24];
+extern thread_local uint8_t _chessBoard[64];
 
 uint64_t pseudoRandomNumberGenerator(uint64_t *seed)
 {
@@ -52,10 +54,10 @@ uint64_t generateXORforPiece(Pieces PIECE, uint64_t PIECE_BIT_MAP)
     return _curr;
 }
 
-uint64_t generateZorbistHashFromAGameState(GAME_STATE_STRUCT* gameState)
+uint64_t generateZorbistHashFromAGameState()
 {
     uint64_t _curr = 0;
-    uint64_t* GAME_STATE = gameState->GAME_STATE;
+
 
     _curr ^= generateXORforPiece(WHITE_KING, GAME_STATE[WHITE_KING_OCCUPANCY]) ^
              generateXORforPiece(WHITE_PAWN, GAME_STATE[WHITE_PAWN_OCCUPANCY]) ^
@@ -99,10 +101,9 @@ void printPieceBitBoard(uint64_t bitboard, char piece)
 }
 
 
-void printBoard(GAME_STATE_STRUCT* state)
+void printBoard()
 {
-    uint64_t* GAME_STATE = state->GAME_STATE;
-    uint8_t*  _chessBoard = state->_chessBoard;
+    
 
     for (int rank = 7; rank >= 0; rank--)
     {
@@ -176,37 +177,42 @@ void printBoard(GAME_STATE_STRUCT* state)
 
 }
 
-uint64_t perft(int depth ,GAME_STATE_STRUCT* state)
+uint64_t perft(int depth )
 {
     if (depth == 0)
         return 1;
 
-    uint64_t* GAME_STATE = state->GAME_STATE;
+
 
     MoveList moves = {0};
-    generateMoveList(&moves,state);
+    generateMoveList(&moves);
 
     uint64_t nodes = 0;
 
 
     for (int i = 0; i < moves.index; i++)
     {
-        GAME_STATE_STRUCT tempStruct={};
+        uint64_t GAME_STATE_COPY[24];
+        uint8_t  _chessBoard_COPY[64];
 
-        memcpy((void *)&tempStruct ,state , sizeof(GAME_STATE_STRUCT));
+        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
+        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
 
-        __uint64_t result =makeMove(moves.moves[i],&tempStruct);
+        __uint64_t result =makeMove(moves.moves[i]);
 
 
-        nodes += perft(depth - 1 , &(tempStruct));
+        nodes += perft(depth - 1 );
 
+
+        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
+        memcpy(_chessBoard ,_chessBoard_COPY , 64*sizeof(uint8_t));
     }
 
     return nodes;
 }
 
 
-__uint64_t perftBulk(int depth, GAME_STATE_STRUCT* state)
+__uint64_t perftBulk(int depth)
 {
 
     if (depth == 0)
@@ -214,9 +220,7 @@ __uint64_t perftBulk(int depth, GAME_STATE_STRUCT* state)
 
     MoveList moves = {0};
 
-    uint64_t* GAME_STATE = state->GAME_STATE;
-
-    generateMoveList(&moves,state);
+    generateMoveList(&moves);
 
     if (depth == 1)
         return moves.index;
@@ -225,28 +229,33 @@ __uint64_t perftBulk(int depth, GAME_STATE_STRUCT* state)
 
     for (int i = 0; i < moves.index; i++)
     {
-        GAME_STATE_STRUCT tempStruct={};
+        uint64_t GAME_STATE_COPY[24];
+        uint8_t  _chessBoard_COPY[64];
 
-        memcpy((void *)&tempStruct ,state , sizeof(GAME_STATE_STRUCT));
+        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
+        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
 
-        __uint64_t result =makeMove(moves.moves[i],&tempStruct);
+        __uint64_t result =makeMove(moves.moves[i]);
 
 
-        nodes += perft(depth - 1 , &(tempStruct));
+        nodes += perftBulk(depth - 1 );
 
+
+        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
+        memcpy(_chessBoard ,_chessBoard_COPY , 64*sizeof(uint8_t));
     }
 
 
     return nodes;
 }
 
-uint64_t divide(int depth , GAME_STATE_STRUCT* state)
+uint64_t divide(int depth)
 {
     if (depth <= 0)
         return 1;
 
     MoveList moves = {0};
-    generateMoveList(&moves,state);
+    generateMoveList(&moves);
 
     uint64_t total = 0;
 
@@ -254,31 +263,49 @@ uint64_t divide(int depth , GAME_STATE_STRUCT* state)
 
     for (int i = 0; i < moves.index; i++)
     {
-        GAME_STATE_STRUCT tempStruct={};
-        memcpy((void *)&tempStruct ,state , sizeof(GAME_STATE_STRUCT));
-        __uint64_t result =makeMove(moves.moves[i], &tempStruct);
-        total += perft(depth - 1 , &(tempStruct));
+        uint64_t GAME_STATE_COPY[24];
+        uint8_t  _chessBoard_COPY[64];
+
+        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
+        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
+
+        __uint64_t result =makeMove(moves.moves[i]);
+
+        total += perft(depth - 1 );
+
+
+        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
+        memcpy(_chessBoard ,_chessBoard_COPY , 64*sizeof(uint8_t));
     }
 
     printf("\nTotal Nodes: %llu\n", (unsigned long long)total);
     return total;
 }
 
-uint64_t divideBulk(int depth ,GAME_STATE_STRUCT* state)
+uint64_t divideBulk(int depth)
 {
     if (depth <= 0)
         return 1;
     MoveList moves = {0};
-    generateMoveList(&moves,state);
+    generateMoveList(&moves);
     uint64_t total = 0;
 
 
     for (int i = 0; i < moves.index; i++)
     {
-        GAME_STATE_STRUCT tempStruct={};
-        memcpy((void *)&tempStruct ,state , sizeof(GAME_STATE_STRUCT));
-        __uint64_t result =makeMove(moves.moves[i], &tempStruct);
-        total += perft(depth - 1 , &(tempStruct));
+        uint64_t GAME_STATE_COPY[24];
+        uint8_t  _chessBoard_COPY[64];
+
+        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
+        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
+
+        __uint64_t result =makeMove(moves.moves[i]);
+        total += perftBulk(depth - 1 );
+
+        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
+        memcpy(_chessBoard,_chessBoard_COPY , 64*sizeof(uint8_t));
+
+
     }
 
 
@@ -286,11 +313,53 @@ uint64_t divideBulk(int depth ,GAME_STATE_STRUCT* state)
     return total;
 }
 
-void piecePuter(uint64_t PIECE_NUMBER, Pieces piece ,GAME_STATE_STRUCT* state)
+uint64_t divideBulkWithThread(int depth)
 {
-    uint64_t* GAME_STATE = state->GAME_STATE;
-    uint8_t* _chessBoard = state->_chessBoard;
+    if (depth==1)
+    {
+        return divideBulk(1); 
+    }
+    
+    if (depth <= 0)
+        return 1;
 
+    MoveList moves = {0};
+    generateMoveList(&moves);
+    uint64_t total = 0;
+
+    
+
+
+    memcpy(moveGeneratedArray, moves.moves , sizeof(uint16_t)*moves.index );
+    moveGeneratedArrayIndex=0;
+    moveGeneratedLastArrayIndex=moves.index;
+    perftNumber=0;
+    GAME_STATE_STRUCT tempState = copyState(); 
+    GAME_STATE_STRUCT_WITH_DEPTH temp={depth-1,tempState};
+
+
+
+    const int threads = THREAD_COUNT+4;
+    pthread_t threadArrays[threads];
+
+
+    for(int i =0 ;i<threads; i++){
+        pthread_create(&threadArrays[i],NULL , doMultiThreadPerft , (void*)&temp);
+
+    }
+
+    for(int i =0;i<threads; i++){
+        pthread_join(threadArrays[i],NULL);
+    }
+
+
+
+    printf("\nTotal Nodes: %llu\n", (unsigned long long)perftNumber);
+    return perftNumber;
+}
+
+void piecePuter(uint64_t PIECE_NUMBER, Pieces piece )
+{
     for (int i = 0; i < 64; i++)
     {
         if (PIECE_NUMBER & (1ULL << i))
@@ -300,9 +369,19 @@ void piecePuter(uint64_t PIECE_NUMBER, Pieces piece ,GAME_STATE_STRUCT* state)
     }
 }
 
-void emptyInitializationHelper(GAME_STATE_STRUCT* state)
+void piecePuterWithBoard(uint64_t PIECE_NUMBER , Pieces piece,uint8_t _chessBoard[64])
 {
-    uint64_t* GAME_STATE = state->GAME_STATE;
+    for (int i = 0; i < 64; i++)
+    {
+        if (PIECE_NUMBER & (1ULL << i))
+        {
+            _chessBoard[i] = piece;
+        }
+    }
+}
+
+void emptyInitializationHelper()
+{
 
     _globalZorbistHashing = generateZorbistNumbers();
 
@@ -339,42 +418,42 @@ void emptyInitializationHelper(GAME_STATE_STRUCT* state)
     GAME_STATE[CASTLING_AVAILABLE] = 0b00001111;
     GAME_STATE[SIDE] = 0;
 
-    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(state);
+    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState();
     GAME_STATE[ENPASSANT_SQUARE] = NS;
     GAME_STATE[NUMBER_FULL_MOVES] = 1;
     GAME_STATE[NUMBER_HALF_MOVES] = 0;
 }
 
-void initializeHelperFunc(GAME_STATE_STRUCT* state){
-    uint64_t* GAME_STATE = state->GAME_STATE;
+void initializeHelperFunc(){
+
     pieceInitializer();
 
     piecePuter(GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN
-        ,state);
-    piecePuter(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK,state);
-    piecePuter(GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP,state);
-    piecePuter(GAME_STATE[BLACK_KNIGHT_OCCUPANCY], BLACK_KNIGHT,state);
-    piecePuter(GAME_STATE[BLACK_QUEEN_OCCUPANCY], BLACK_QUEEN,state);
-    piecePuter(GAME_STATE[BLACK_KING_OCCUPANCY], BLACK_KING,state);
-    piecePuter(GAME_STATE[WHITE_PAWN_OCCUPANCY], WHITE_PAWN,state);
-    piecePuter(GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK,state);
-    piecePuter(GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP,state);
-    piecePuter(GAME_STATE[WHITE_KNIGHT_OCCUPANCY], WHITE_KNIGHT,state);
-    piecePuter(GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN,state);
-    piecePuter(GAME_STATE[WHITE_KING_OCCUPANCY], WHITE_KING,state);
-    piecePuter(~(GAME_STATE[TOTAL_OCCUPANCY]), ES,state);
+        );
+    piecePuter(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK);
+    piecePuter(GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP);
+    piecePuter(GAME_STATE[BLACK_KNIGHT_OCCUPANCY], BLACK_KNIGHT);
+    piecePuter(GAME_STATE[BLACK_QUEEN_OCCUPANCY], BLACK_QUEEN);
+    piecePuter(GAME_STATE[BLACK_KING_OCCUPANCY], BLACK_KING);
+    piecePuter(GAME_STATE[WHITE_PAWN_OCCUPANCY], WHITE_PAWN);
+    piecePuter(GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK);
+    piecePuter(GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP);
+    piecePuter(GAME_STATE[WHITE_KNIGHT_OCCUPANCY], WHITE_KNIGHT);
+    piecePuter(GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN);
+    piecePuter(GAME_STATE[WHITE_KING_OCCUPANCY], WHITE_KING);
+    piecePuter(~(GAME_STATE[TOTAL_OCCUPANCY]), ES);
 }
 
-void initializer(GAME_STATE_STRUCT* state)
+void initializer()
 {
-    emptyInitializationHelper(state);
-    initializeHelperFunc(state);
+    emptyInitializationHelper();
+    initializeHelperFunc();
 }
 
-__uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
+__uint64_t makeMove(uint16_t move)
 {
-    uint64_t* GAME_STATE = state->GAME_STATE;
-    uint8_t* _chessBoard = state->_chessBoard;
+
+    
     char promotionPie[5] = {'\0', 'q', 'r', 'b', 'n'};
     __uint64_t result = 0;
 
@@ -738,9 +817,8 @@ __uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state)
 }
 
 
-int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
+int initializeNewGameFromString(char *string)
 {
-    uint64_t* GAME_STATE = state->GAME_STATE;
     FEN_STRING _string1;
 
     char copy[UCI_LINE_SIZE];
@@ -1026,9 +1104,79 @@ int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state)
         return -1;
     }
     GAME_STATE[NUMBER_FULL_MOVES] = value;
-    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState(state);
+    GAME_STATE[ZORBIST_HASH] = generateZorbistHashFromAGameState();
 
-    initializeHelperFunc(state);
+    initializeHelperFunc();
 
     return 1;
+}
+
+void initializeNewGameFromStruct(GAME_STATE_STRUCT* state)
+{
+    uint64_t* GAME_STATE= state->GAME_STATE;
+    uint8_t* _chessBoard= state->_chessBoard;
+
+    pieceInitializer();
+
+    piecePuterWithBoard(GAME_STATE[BLACK_PAWN_OCCUPANCY], BLACK_PAWN ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[BLACK_ROOK_OCCUPANCY], BLACK_ROOK ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[BLACK_BISHOP_OCCUPANCY], BLACK_BISHOP ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[BLACK_KNIGHT_OCCUPANCY], BLACK_KNIGHT ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[BLACK_QUEEN_OCCUPANCY], BLACK_QUEEN ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[BLACK_KING_OCCUPANCY], BLACK_KING ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_PAWN_OCCUPANCY], WHITE_PAWN ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_ROOK_OCCUPANCY], WHITE_ROOK ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_BISHOP_OCCUPANCY], WHITE_BISHOP ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_KNIGHT_OCCUPANCY], WHITE_KNIGHT ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_QUEEN_OCCUPANCY], WHITE_QUEEN ,_chessBoard);
+    piecePuterWithBoard(GAME_STATE[WHITE_KING_OCCUPANCY], WHITE_KING ,_chessBoard);
+    piecePuterWithBoard(~(GAME_STATE[TOTAL_OCCUPANCY]), ES ,_chessBoard);
+}
+
+GAME_STATE_STRUCT copyState()
+{
+    GAME_STATE_STRUCT newStruct;
+    memcpy(newStruct.GAME_STATE,GAME_STATE, 24*sizeof(uint64_t) );
+    memcpy(newStruct._chessBoard,_chessBoard ,64*sizeof(uint8_t) );
+    
+    return newStruct;
+}
+
+
+void doMultiThreadPerft(void* address )
+{
+    GAME_STATE_STRUCT_WITH_DEPTH data = *((GAME_STATE_STRUCT_WITH_DEPTH*)address);
+    memcpy(GAME_STATE ,data.state.GAME_STATE, 24*sizeof(uint64_t));
+    memcpy(_chessBoard, data.state._chessBoard , 64*sizeof(uint8_t));
+
+    while(1){
+        int index;
+        pthread_mutex_lock(&moveArrayReadingLock);
+        if(moveGeneratedArrayIndex == moveGeneratedLastArrayIndex){
+            pthread_mutex_unlock(&moveArrayReadingLock);
+            return;
+        }
+        index = (moveGeneratedArrayIndex++);
+        pthread_mutex_unlock(&moveArrayReadingLock);
+
+        uint64_t GAME_STATE_COPY[24];
+        uint8_t  _chessBoard_COPY[64];
+
+        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
+        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
+
+        makeMove(moveGeneratedArray[index]);
+
+
+
+
+        uint64_t total = perftBulk(data.depth);
+        memcpy(GAME_STATE ,GAME_STATE_COPY, 24*sizeof(uint64_t));
+        memcpy(_chessBoard,_chessBoard_COPY , 64*sizeof(uint8_t));
+
+        pthread_mutex_lock(&updatePerftCondLock);
+        perftNumber += total;
+        pthread_mutex_unlock(&updatePerftCondLock);
+
+    }
 }

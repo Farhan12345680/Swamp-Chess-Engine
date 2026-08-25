@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include "./multithread.h"
+#include "./locks.h"
 
 #ifndef __uint64_t
 #define __uint64_t uint64_t
@@ -219,28 +220,36 @@ typedef struct GAME_STATE_STRUCT{
 
 } GAME_STATE_STRUCT;
 
+typedef struct GAME_STATE_STRUCT_WITH_DEPTH{
+    int depth;
+    GAME_STATE_STRUCT state;
+} GAME_STATE_STRUCT_WITH_DEPTH;
 
 
 
 extern const uint8_t CASTLING_ARRAY[];
-void printBoard(GAME_STATE_STRUCT* state);
+void printBoard();
 void printPieceBitBoard(uint64_t bitboard, char piece);
 void pieceInitializer();
-void checkKingInCheckAndAddMove(int curr , int opp ,Square src , Square dest,int _promotion ,MoveList* _moveList ,GAME_STATE_STRUCT* state);
+void checkKingInCheckAndAddMove(int curr , int opp ,Square src , Square dest,int _promotion ,MoveList* _moveList );
 uint64_t pseudoRandomNumberGenerator(uint64_t *seed);
 ZorbistKeys generateZorbistNumbers();
 __uint64_t generateXORforPiece(Pieces PIECE, uint64_t PIECE_BIT_MAP);
-__uint64_t generateZorbistHashFromAGameState(GAME_STATE_STRUCT* gameState);
+__uint64_t generateZorbistHashFromAGameState();
 bool isSquareAttacked(Square square, int opp);
-void generateMoveList(MoveList * _moves,GAME_STATE_STRUCT *state);
-__uint64_t makeMove(uint16_t move ,GAME_STATE_STRUCT *state);
-__uint64_t perft(int depth ,GAME_STATE_STRUCT* state);
-__uint64_t perftBulk(int depth, GAME_STATE_STRUCT* state);
-__uint64_t divide(int depth , GAME_STATE_STRUCT* state);
-__uint64_t divideBulk(int depth ,GAME_STATE_STRUCT* state);
-void piecePuter(uint64_t PIECE_NUMBER, Pieces piece ,GAME_STATE_STRUCT* state);
-void emptyInitializationHelper(GAME_STATE_STRUCT* state);
-void initializeHelperFunc(GAME_STATE_STRUCT* state);
-void initializer(GAME_STATE_STRUCT* state);
-__uint64_t makeMove(uint16_t move,GAME_STATE_STRUCT* state);
-int initializeNewGameFromString(char *string , GAME_STATE_STRUCT* state);
+void generateMoveList(MoveList * _moves);
+__uint64_t makeMove(uint16_t move);
+__uint64_t perft(int depth );
+__uint64_t perftBulk(int depth);
+__uint64_t divide(int depth);
+__uint64_t divideBulk(int depth );
+__uint64_t divideBulkWithThread(int depth);
+void piecePuter(uint64_t PIECE_NUMBER, Pieces piece );
+void emptyInitializationHelper();
+void initializeHelperFunc();
+void initializer();
+int initializeNewGameFromString(char *string );
+void initializeNewGameFromStruct(GAME_STATE_STRUCT*);
+void piecePuterWithBoard(uint64_t PIECE_NUMBER, Pieces piece ,uint8_t _chessBoard[64] );
+GAME_STATE_STRUCT copyState();
+void doMultiThreadPerft();

@@ -1,6 +1,8 @@
 #pragma once
 #include <pthread.h>
-
+#include "./multithread.h"
+#include <stdbool.h>
+#include <stdint.h>
 ////////////////////////////////////////
 // -------------------------------------
 // ------------ LOCKS ------------------
@@ -29,3 +31,18 @@ typedef enum {
 
 
 extern CMD_TYPE CMD_CASE;
+
+
+
+// multithreading move generation 
+extern uint16_t moveGeneratedArray[256];
+extern int moveGeneratedArrayIndex;
+extern int moveGeneratedLastArrayIndex;
+extern pthread_cond_t moveArrayReading;
+extern pthread_mutex_t moveArrayReadingLock;
+
+
+extern uint64_t perftNumber;
+extern pthread_cond_t updatePerftCond;
+extern pthread_mutex_t updatePerftCondLock;
+extern bool updating;

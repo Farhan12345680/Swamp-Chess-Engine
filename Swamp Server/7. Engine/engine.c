@@ -20,7 +20,7 @@ void* EngineHandler(void* returnT)
         switch (CMD_CASE)
         {
         case CMD_TYPE_ISREADY:{
-            initializer(&globalGameStruct);
+            initializer();
             int* returnC = (int*)returnT;
             *returnC = 1  ;
             pthread_mutex_unlock(&inputLock);
@@ -28,14 +28,14 @@ void* EngineHandler(void* returnT)
             break;}
         case CMD_TYPE_FENPOSITION:{
 
-            int ret=initializeNewGameFromString((char*)returnT , &globalGameStruct);
+            int ret=initializeNewGameFromString((char*)returnT);
 
             int* returnC = (int*)returnT;
             *returnC = ret  ;
 
             if(ret==-1){
                 printf("Wrong\n");
-                initializer(&globalGameStruct);
+                initializer();
             }
             pthread_mutex_unlock(&inputLock);
             break;
@@ -47,11 +47,22 @@ void* EngineHandler(void* returnT)
             pthread_mutex_unlock(&inputLock);
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
+            double seconds;
+            #ifdef MULTITHREAD
+                divideBulkWithThread(level);
+                clock_gettime(CLOCK_MONOTONIC, &end);
 
-            divideBulk(level ,&globalGameStruct);
+                seconds =
+                    (end.tv_sec - start.tv_sec) +
+                    (end.tv_nsec - start.tv_nsec) / 1e9;
+                printf("Time: %.9f seconds\n", seconds);
+                break;
+            #endif
+            divideBulk(level);
+
             clock_gettime(CLOCK_MONOTONIC, &end);
 
-            double seconds =
+            seconds =
                 (end.tv_sec - start.tv_sec) +
                 (end.tv_nsec - start.tv_nsec) / 1e9;
             printf("Time: %.9f seconds\n", seconds);
@@ -59,7 +70,7 @@ void* EngineHandler(void* returnT)
         }
         case CMD_TYPE_MAKEMOVE:
         {
-            makeMove(((uint16_t*)retValueOfComputation)[0], &globalGameStruct);
+            makeMove(((uint16_t*)retValueOfComputation)[0]);
             pthread_mutex_unlock(&inputLock);
             break;
         }
@@ -68,7 +79,7 @@ void* EngineHandler(void* returnT)
 
         }
         case  CMD_TYPE_PRINTBOARD:
-            printBoard(&globalGameStruct);
+            printBoard();
             pthread_mutex_unlock(&inputLock);
 
             break;
