@@ -1,5 +1,7 @@
 #include "../1. core/uciserver.h"
 
+char globalPositionMoveOrder[256][6]={0};
+int positionCount=0;
 
 void resetGoCommand(GO_COMMAND *go)
 {
@@ -393,6 +395,11 @@ void* UCI_SERVER(void* arg)
 
             case CMD_POSITION:
 
+                pthread_mutex_lock(&inputLock);
+                CMD_CASE=CMD_TYPE_ISREADY;
+                pthread_cond_broadcast(&inputCond);
+                pthread_mutex_unlock(&inputLock);
+
                 if (command.position.startpos)
                 {
                 }
@@ -408,18 +415,23 @@ void* UCI_SERVER(void* arg)
                     memcpy(retValueOfComputation ,command.position.fen, strlen(command.position.fen)+1);
                     pthread_cond_broadcast(&inputCond);
                     pthread_mutex_unlock(&inputLock);
+
+                    continue;
                 }
 
 
-                for (int i = 0; i < command.position.moveCount; i++)
-                {
+
                     pthread_mutex_lock(&inputLock);
-                    memcpy(retValueOfComputation ,command.position.moves[i], strlen(command.position.moves[i])+1);
+                    for(int j=0;j<command.position.moveCount; j++){
+                        memcpy(globalPositionMoveOrder[j] ,command.position.moves[j], strlen(command.position.moves[j])+1);
+                    }
+                    positionCount=command.position.moveCount;
+
                     CMD_CASE=CMD_TYPE_MAKEMOVE;
                     pthread_cond_broadcast(&inputCond);
                     pthread_mutex_unlock(&inputLock);
 
-                }
+
                 printf("readyok\n");
                 break;
 

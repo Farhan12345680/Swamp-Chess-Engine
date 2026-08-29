@@ -46,3 +46,7 @@ extern uint64_t perftNumber;
 extern pthread_cond_t updatePerftCond;
 extern pthread_mutex_t updatePerftCondLock;
 extern bool updating;
+
+
+extern char globalPositionMoveOrder[256][6];
+extern int positionCount;
