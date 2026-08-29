@@ -3,6 +3,10 @@
 Swamp is a chess engine, created to fulfill the project requirement of the course CSE 3812 at UIU .
 <br>
 
+> [!important]
+> the Engine is currently in progress and only board representation , movegenerator has been done 
+
+
 <p align="center">
   <img src="./web-gui-interface/images/swamp.png" alt="Swamp Chess Engine" width="300">
 </p>

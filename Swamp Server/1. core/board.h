@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "./multithread.h"
 #include "./locks.h"
-
+#include <threads.h>
 #ifndef __uint64_t
 #define __uint64_t uint64_t
 #endif
@@ -268,3 +268,9 @@ uint64_t bishop_attacks_on_the_fly(int square, uint64_t block);
 void initMasks();
 void generateBishopMask();
 void generateRookMask();
+
+extern uint64_t fileMask[64];
+extern uint64_t cornerfileMask[64];
+
+void generateCornerFileMask();
+void generateFileMask();

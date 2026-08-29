@@ -4,6 +4,7 @@
 extern thread_local uint64_t GAME_STATE[24];
 extern thread_local uint8_t _chessBoard[64];
 
+
 uint64_t pseudoRandomNumberGenerator(uint64_t *seed)
 {
     uint64_t _z = (*seed += 0x9E3779B97F4A7C15ULL);
@@ -100,10 +101,9 @@ void printPieceBitBoard(uint64_t bitboard, char piece)
     }
 }
 
-
 void printBoard()
 {
-    
+
 
     for (int rank = 7; rank >= 0; rank--)
     {
@@ -211,10 +211,8 @@ uint64_t perft(int depth )
     return nodes;
 }
 
-
 __uint64_t perftBulk(int depth)
 {
-
     if (depth == 0)
         return 1;
 
@@ -249,8 +247,31 @@ __uint64_t perftBulk(int depth)
     return nodes;
 }
 
-uint64_t divide(int depth)
-{
+static inline void squareToString(int sq, char *buf) {
+    static const char files[] = "abcdefgh";
+    buf[0] = files[sq & 7];
+    buf[1] = '1' + (sq >> 3);
+    buf[2] = '\0';
+}
+
+static inline void moveToString(uint16_t move, char *buf) {
+    int src = move & 0x3F;
+    int dst = (move >> 6) & 0x3F;
+    int promo = (move >> 12) & 0xF;
+    char srcStr[3], dstStr[3];
+    squareToString(src, srcStr);
+    squareToString(dst, dstStr);
+    if (promo) {
+        static const char promoPieces[] = "nbrq";
+        sprintf(buf, "%s%s%c", srcStr, dstStr, promoPieces[promo-1]);
+    } else {
+        sprintf(buf, "%s%s", srcStr, dstStr);
+    }
+}
+
+
+
+uint64_t divide(int depth) {
     if (depth <= 0)
         return 1;
 
@@ -259,57 +280,62 @@ uint64_t divide(int depth)
 
     uint64_t total = 0;
 
-
-
-    for (int i = 0; i < moves.index; i++)
-    {
+    for (int i = 0; i < moves.index; i++) {
         uint64_t GAME_STATE_COPY[24];
         uint8_t  _chessBoard_COPY[64];
 
-        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
-        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
+        memcpy(GAME_STATE_COPY, GAME_STATE, 24 * sizeof(uint64_t));
+        memcpy(_chessBoard_COPY, _chessBoard, 64 * sizeof(uint8_t));
 
-        __uint64_t result =makeMove(moves.moves[i]);
+        makeMove(moves.moves[i]);   // apply the move (return value ignored)
 
-        total += perft(depth - 1 );
+        uint64_t perMove = perft(depth - 1);
 
+        char moveStr[8];
+        moveToString(moves.moves[i], moveStr);
+        printf("%s: %llu\n", moveStr, (unsigned long long)perMove);
 
-        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
-        memcpy(_chessBoard ,_chessBoard_COPY , 64*sizeof(uint8_t));
+        total += perMove;
+
+        memcpy(GAME_STATE, GAME_STATE_COPY, 24 * sizeof(uint64_t));
+        memcpy(_chessBoard, _chessBoard_COPY, 64 * sizeof(uint8_t));
     }
 
-    printf("\nTotal Nodes: %llu\n", (unsigned long long)total);
+    printf("\nNodes searched: %llu\n", (unsigned long long)total);
     return total;
 }
 
-uint64_t divideBulk(int depth)
-{
+uint64_t divideBulk(int depth) {
     if (depth <= 0)
         return 1;
+
     MoveList moves = {0};
     generateMoveList(&moves);
+
     uint64_t total = 0;
 
-
-    for (int i = 0; i < moves.index; i++)
-    {
+    for (int i = 0; i < moves.index; i++) {
         uint64_t GAME_STATE_COPY[24];
         uint8_t  _chessBoard_COPY[64];
 
-        memcpy(GAME_STATE_COPY ,GAME_STATE , 24*sizeof(uint64_t));
-        memcpy(_chessBoard_COPY ,_chessBoard , 64*sizeof(uint8_t));
+        memcpy(GAME_STATE_COPY, GAME_STATE, 24 * sizeof(uint64_t));
+        memcpy(_chessBoard_COPY, _chessBoard, 64 * sizeof(uint8_t));
 
-        __uint64_t result =makeMove(moves.moves[i]);
-        total += perftBulk(depth - 1 );
+        makeMove(moves.moves[i]);
 
-        memcpy(GAME_STATE ,GAME_STATE_COPY , 24*sizeof(uint64_t));
-        memcpy(_chessBoard,_chessBoard_COPY , 64*sizeof(uint8_t));
+        uint64_t perMove = perftBulk(depth - 1);
 
+        char moveStr[8];
+        moveToString(moves.moves[i], moveStr);
+        printf("%s: %llu\n", moveStr, (unsigned long long)perMove);
 
+        total += perMove;
+
+        memcpy(GAME_STATE, GAME_STATE_COPY, 24 * sizeof(uint64_t));
+        memcpy(_chessBoard, _chessBoard_COPY, 64 * sizeof(uint8_t));
     }
 
-
-    printf("\nTotal Nodes: %llu\n", (unsigned long long)total);
+    printf("\nNodes searched: %llu\n", (unsigned long long)total);
     return total;
 }
 
@@ -317,9 +343,9 @@ uint64_t divideBulkWithThread(int depth)
 {
     if (depth==1)
     {
-        return divideBulk(1); 
+        return divideBulk(1);
     }
-    
+
     if (depth <= 0)
         return 1;
 
@@ -327,14 +353,14 @@ uint64_t divideBulkWithThread(int depth)
     generateMoveList(&moves);
     uint64_t total = 0;
 
-    
+
 
 
     memcpy(moveGeneratedArray, moves.moves , sizeof(uint16_t)*moves.index );
     moveGeneratedArrayIndex=0;
     moveGeneratedLastArrayIndex=moves.index;
     perftNumber=0;
-    GAME_STATE_STRUCT tempState = copyState(); 
+    GAME_STATE_STRUCT tempState = copyState();
     GAME_STATE_STRUCT_WITH_DEPTH temp={depth-1,tempState};
 
 
@@ -382,6 +408,8 @@ void piecePuterWithBoard(uint64_t PIECE_NUMBER , Pieces piece,uint8_t _chessBoar
 
 void emptyInitializationHelper()
 {
+    memset(GAME_STATE ,0 , sizeof(__uint64_t)*24);
+    memset(_chessBoard ,0 , sizeof(char)*64);
 
     _globalZorbistHashing = generateZorbistNumbers();
 
@@ -446,14 +474,13 @@ void initializeHelperFunc(){
 
 void initializer()
 {
+
     emptyInitializationHelper();
     initializeHelperFunc();
 }
 
 __uint64_t makeMove(uint16_t move)
 {
-
-    
     char promotionPie[5] = {'\0', 'q', 'r', 'b', 'n'};
     __uint64_t result = 0;
 
@@ -1138,7 +1165,7 @@ GAME_STATE_STRUCT copyState()
     GAME_STATE_STRUCT newStruct;
     memcpy(newStruct.GAME_STATE,GAME_STATE, 24*sizeof(uint64_t) );
     memcpy(newStruct._chessBoard,_chessBoard ,64*sizeof(uint8_t) );
-    
+
     return newStruct;
 }
 
@@ -1218,6 +1245,7 @@ void generateRookMask()
     }
 }
 
+
 void generateBishopMask()
 {
     for (int row = 1; row < 9; row++)
@@ -1250,8 +1278,78 @@ void generateBishopMask()
     }
 }
 
+void generateCornerFileMask()
+{
+    for (int row = 1; row < 9; row++)
+    {
+        for (int column = 1; column < 9; column++)
+        {
+            int _idx = (row - 1) * 8 + (column - 1);
+            uint64_t _point = 1ULL << _idx;
+            uint64_t _mask = 0;
+            _mask |= _point;
+
+            for (int k = row + 1, l = column - 1; k < 9 && l > 0; k++, l--)
+            {
+                _mask |= _point << (7 * (abs(k - row)));
+            }
+            for (int k = row + 1, l = column + 1; k < 9 && l < 9; k++, l++)
+            {
+                _mask |= _point << (9 * (abs(k - row)));
+            }
+            for (int k = row - 1, l = column - 1; k > 0 && l > 0; k--, l--)
+            {
+                _mask |= _point >> (9 * (abs(k - row)));
+            }
+            for (int k = row - 1, l = column + 1; k > 0 && l < 9; k--, l++)
+            {
+                _mask |= _point >> (7 * (abs(k - row)));
+            }
+
+            cornerfileMask[_idx] = _mask;
+        }
+    }
+}
+
+void generateFileMask()
+{
+    for (int i = 1; i < 9; i++)
+    {
+        for (int j = 1; j < 9; j++)
+        {
+            int _idx = (i - 1) * 8 + (j - 1);
+            uint64_t _point = 1ULL << _idx;
+            uint64_t _mask = 0;
+            _mask |= _point;
+
+            for (int k = i + 1; k < 9; k++)
+            {
+                _mask |= _point << (8 * (abs(k - i)));
+            }
+            for (int k = i - 1; k > 0; k--)
+            {
+                _mask |= _point >> (8 * (abs(k - i)));
+            }
+            for (int k = j + 1; k < 9; k++)
+            {
+                _mask |= _point << ((abs(k - j)));
+            }
+            for (int k = j - 1; k > 0; k--)
+            {
+                _mask |= _point >> ((abs(k - j)));
+            }
+
+            fileMask[_idx] = _mask;
+        }
+    }
+
+}
+
 void initMasks()
 {
+    generateCornerFileMask();
+    generateFileMask();
+
     generateRookMask();
     generateBishopMask();
 }
