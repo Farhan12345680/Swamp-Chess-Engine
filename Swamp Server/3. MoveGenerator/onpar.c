@@ -16,7 +16,10 @@ uint64_t kingTable[64];
 uint64_t bishopAttacks[64][512];
 uint64_t rookAttacks[64][4096];
 uint64_t rookMask[64];
-uint64_t bishopMask[64];
+uint64_t bishopMask[64];\
+uint64_t fileMask[64];
+uint64_t cornerfileMask[64];
+
 const __uint64_t pawnEnpassantMask[2]={
                                  0b0000000000000000000000001111111100000000000000000000000000000000,
                                  0b0000000000000000000000000000000011111111000000000000000000000000};
