@@ -4,7 +4,7 @@ Swamp is a chess engine, created to fulfill the project requirement of the cours
 <br>
 
 > [!important]
-> the Engine is currently in progress and only board representation , movegenerator has been done 
+> the Engine 1.0 with has been developed , check build instructions for building. The build steps do require make for building && gcc with "C 17" available along with posix threads
 
 
 <p align="center">
@@ -28,12 +28,8 @@ Swamp is a chess engine, created to fulfill the project requirement of the cours
 
 #### Engine
 
-- cd into "./Swamp Server/"
-- gcc Swamp.c -pthread -static
-
-#### Java Server
-
-- java Server.java
+> [!TIP]
+> running "make engine" the default engine with the best configuration available  , consult the make file to make & build different configuration of the engine.
 
 #### web-gui-interface
 

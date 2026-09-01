@@ -182,11 +182,8 @@ uint64_t perft(int depth )
     if (depth == 0)
         return 1;
 
-
-
     MoveList moves = {0};
     generateMoveList(&moves);
-
     uint64_t nodes = 0;
 
 
@@ -247,14 +244,16 @@ __uint64_t perftBulk(int depth)
     return nodes;
 }
 
-static inline void squareToString(int sq, char *buf) {
+static inline void squareToString(int sq, char *buf)
+{
     static const char files[] = "abcdefgh";
     buf[0] = files[sq & 7];
     buf[1] = '1' + (sq >> 3);
     buf[2] = '\0';
 }
 
-static inline void moveToString(uint16_t move, char *buf) {
+static inline void moveToString(uint16_t move, char *buf)
+{
     int src = move & 0x3F;
     int dst = (move >> 6) & 0x3F;
     int promo = (move >> 12) & 0xF;
@@ -479,7 +478,7 @@ void initializer()
     initializeHelperFunc();
 }
 
-__uint64_t makeMove(uint16_t move)
+uint64_t makeMove(uint16_t move)
 {
     char promotionPie[5] = {'\0', 'q', 'r', 'b', 'n'};
     __uint64_t result = 0;

@@ -1,6 +1,10 @@
 #include "../1. core/engine.h"
 #include "../1. core/locks.h"
 #include "../1. core/engine.h"
+#include "../1. core/search.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -12,77 +16,83 @@ void* EngineHandler(void* returnT)
     {
         pthread_mutex_lock(&inputLock);
 
-        while (!CMD_CASE)
+        while (!ququeSize)
         {
             pthread_cond_wait(&inputCond, &inputLock);
         }
+        commandPoint* temp = head;
+        head=head->next;
+        ququeSize--;
 
-        switch (CMD_CASE)
+
+        switch (temp->CMD_CASE)
         {
-        case CMD_TYPE_ISREADY:{
-            initializer();
-            // int* returnC = (int*)returnT;
-            // *returnC = 1  ;
-            pthread_mutex_unlock(&inputLock);
+            case CMD_TYPE_ISREADY:
+            {
+                printf("readyok\n");
+                fflush(stdout);
 
-            break;}
-        case CMD_TYPE_FENPOSITION:{
-
-            int ret=initializeNewGameFromString((char*)returnT);
-
-            int* returnC = (int*)returnT;
-            *returnC = ret  ;
-
-            if(ret==-1){
-                printf("Wrong\n");
-                initializer();
+                pthread_mutex_unlock(&inputLock);
+                break;
             }
-            pthread_mutex_unlock(&inputLock);
-            break;
+            case CMD_TYPE_STARTPOS:
+            {
+                initializer();
 
-        }
-        case CMD_TYPE_PERFT:
-        {
-            int level = ((int *)retValueOfComputation)[0];
-            pthread_mutex_unlock(&inputLock);
-            struct timespec start, end;
-            clock_gettime(CLOCK_MONOTONIC, &start);
-            double seconds;
-            #ifdef MULTITHREAD
-                divideBulkWithThread(level);
+                pthread_mutex_unlock(&inputLock);
+                break;
+            }
+            case CMD_TYPE_FENPOSITION:
+            {
+
+                int ret=initializeNewGameFromString(temp->fenString);
+
+
+
+                if(ret==-1){
+                    printf("Wrong fen\n");
+                    initializer();
+                }
+                pthread_mutex_unlock(&inputLock);
+                break;
+
+            }
+            case CMD_TYPE_PERFT:
+            {
+                int level = temp->perftDepth;
+                pthread_mutex_unlock(&inputLock);
+                struct timespec start, end;
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                double seconds;
+                #ifdef MULTITHREAD
+                    divideBulkWithThread(level);
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+
+                    seconds =
+                        (end.tv_sec - start.tv_sec) +
+                        (end.tv_nsec - start.tv_nsec) / 1e9;
+                    printf("Time: %.9f seconds\n", seconds);
+                    break;
+                #endif
+                divideBulk(level);
+
                 clock_gettime(CLOCK_MONOTONIC, &end);
 
-                seconds =
-                    (end.tv_sec - start.tv_sec) +
-                    (end.tv_nsec - start.tv_nsec) / 1e9;
-                printf("Time: %.9f seconds\n", seconds);
+                seconds = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
                 break;
-            #endif
-            divideBulk(level);
+            }
+            case CMD_TYPE_MAKEMOVE:
+            {
 
-            clock_gettime(CLOCK_MONOTONIC, &end);
-
-            seconds =
-                (end.tv_sec - start.tv_sec) +
-                (end.tv_nsec - start.tv_nsec) / 1e9;
-            printf("Time: %.9f seconds\n", seconds);
-            break;
-        }
-        case CMD_TYPE_MAKEMOVE:
-        {
-            initializer();
-            for(int i =0;i<positionCount; i+=1){
-                uint16_t src  = (uint16_t)((globalPositionMoveOrder[i][0] - 'a') + ((globalPositionMoveOrder[i][1] - '1') * 8));
-                uint16_t dest = (uint16_t)((globalPositionMoveOrder[i][2] - 'a') + ((globalPositionMoveOrder[i][3] - '1') * 8));
-
+                initializer();
+                for(int i =0;i<temp->moveCount; i+=1){
+                    uint16_t src  = (uint16_t)((temp->globalPositionMoveOrder[i][0] - 'a') + ((temp->globalPositionMoveOrder[i][1] - '1') * 8));
+                    uint16_t dest = (uint16_t)((temp->globalPositionMoveOrder[i][2] - 'a') + ((temp->globalPositionMoveOrder[i][3] - '1') * 8));
                 uint16_t move = src | (dest << 6);
-
-
-                if (globalPositionMoveOrder[i][4] != '\0')
+                if (temp->globalPositionMoveOrder[i][4] != '\0')
                 {
                     uint16_t promo = 0;
-
-                    switch (globalPositionMoveOrder[i][4])
+                    switch (temp->globalPositionMoveOrder[i][4])
                     {
                         case 'q': promo = 1; break;
                         case 'r': promo = 2; break;
@@ -90,32 +100,58 @@ void* EngineHandler(void* returnT)
                         case 'n': promo = 4; break;
                         default:  promo = 0; break;
                     }
-
                     move |= (promo << 12);
                 }
-
                 makeMove(move);
+
+                }
+
+
+                pthread_mutex_unlock(&inputLock);
+                break;
+            }
+            case CMD_TYPE_GO_SEARCH:
+            {
+                pthread_mutex_unlock(&inputLock);
+                uint16_t move = goSearch();
+
+
+
+                char movearr[6];
+                uint16_t src  = move & 63;
+                move >>= 6;
+                uint16_t dest = move & 63;
+                move >>=6;
+                uint16_t promotion = move ;
+                char promotionPie[5] = {'\0', 'q', 'r', 'b', 'n'};
+                movearr[0]=(char)((src%8) + 'a');
+                movearr[1]=(char)((src/8) + '1');
+                movearr[2]=(char)((dest%8) + 'a');
+                movearr[3]=(char)((dest/8) + '1');
+
+                movearr[4] = promotionPie[promotion];
+                movearr[5] = '\0';
+
+                printf("bestmove %s\n" , movearr);
+                fflush(stdout);
+                break;
+            }
+            case 99:
+            {
+
+            }
+            case  CMD_TYPE_PRINTBOARD:
+            {
+                pthread_mutex_unlock(&inputLock);
+                printBoard();
+                break;
+            }
+            default:
+            {
+                break;
             }
 
-
-
-            pthread_mutex_unlock(&inputLock);
-            break;
         }
-        case 99:
-        {
-
-        }
-        case  CMD_TYPE_PRINTBOARD:
-            printBoard();
-            pthread_mutex_unlock(&inputLock);
-
-            break;
-        default:
-            break;
-        }
-        CMD_CASE=CMD_TYPE_NOCOMMAND;
-
-
+        free(temp);
     }
 }

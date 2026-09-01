@@ -1793,7 +1793,7 @@ void generateMoveList(MoveList * _moves )
             GAME_STATE[curr+3] &= pieceBitmap;
             GAME_STATE[curr+4] &= pieceBitmap;
 
-            GAME_STATE[curr>>2 + WHITE_OCCUPANCY] =  GAME_STATE[curr+5] | GAME_STATE[curr+2] |
+            GAME_STATE[(curr>>2) + WHITE_OCCUPANCY] =  GAME_STATE[curr+5] | GAME_STATE[curr+2] |
             GAME_STATE[curr+1] |
             GAME_STATE[curr+3] |
             GAME_STATE[curr+4] | GAME_STATE[curr];
