@@ -115,6 +115,13 @@ void* EngineHandler(void* returnT)
                 pthread_mutex_unlock(&inputLock);
                 uint16_t move = goSearch();
 
+                if(move==0x0000)
+                {
+
+                    printf("bestmove 0000\n");
+                    fflush(stdout);
+                    break;
+                }
 
 
                 char movearr[6];
