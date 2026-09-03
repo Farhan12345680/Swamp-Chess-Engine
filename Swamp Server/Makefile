@@ -14,8 +14,8 @@ DEBUGFLAGS = -g1 -std=c17 -D_POSIX_C_SOURCE=200809L
 ####################################################
 
 
-SEARCH = ./"4. Search"/MinMax.c -DGREEDY
-EVALUTATION = ./"5. Evaluation"/evaluation1.c
+SEARCH = ./"4. Search"/"Level-3 MinMaxWithAlphaBeta.c" -DGREEDY
+EVALUTATION = ./"5. Evaluation"/evaluation2.c
 MOVEGENERATOR = ./"3. MoveGenerator"/abovepar.c
 
 

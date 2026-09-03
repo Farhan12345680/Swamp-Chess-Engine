@@ -1771,13 +1771,13 @@ void generateMoveList(MoveList * _moves )
 
             uint64_t pieceBitmap= pieces.east | pieces.west | pieces.north | pieces.south | pieces.north_east | pieces.north_west | pieces.south_east | pieces.south_west;
 
+            generateQueenMoveList(_moves , pieceBitmap ,~(0ULL));
+            generateRookMoveList(_moves , pieceBitmap , ~(0ULL));
+            generateBishopMoveList(_moves , pieceBitmap , ~(0ULL));
+            generateKnightMoveList(_moves , pieceBitmap ,~(0ULL));
 
             generatePawnMovements(_moves , pieceBitmap ,~(0ULL) );
             generateKingMoveListSpecial(_moves );
-            generateRookMoveList(_moves , pieceBitmap , ~(0ULL));
-            generateBishopMoveList(_moves , pieceBitmap , ~(0ULL));
-            generateQueenMoveList(_moves , pieceBitmap ,~(0ULL));
-            generateKnightMoveList(_moves , pieceBitmap ,~(0ULL));
 
 
 
@@ -1804,11 +1804,13 @@ void generateMoveList(MoveList * _moves )
             for(int pin =0 ;pin<8; pin++){
                 if(pinPoint[pin]){
                     // printf("this is raypoint -> %lld\n", rayPoint[pin]);
-                    generatePawnMovements(_moves , ~pinPoint[pin] , rayPoint[pin] );
+
+
+                    generateQueenMoveList(_moves , ~pinPoint[pin] , rayPoint[pin]);
                     generateRookMoveList(_moves , ~pinPoint[pin], rayPoint[pin]);
                     generateBishopMoveList(_moves , ~pinPoint[pin] , rayPoint[pin]);
-                    generateQueenMoveList(_moves , ~pinPoint[pin] , rayPoint[pin]);
                     generateKnightMoveList(_moves , ~pinPoint[pin] , rayPoint[pin]);
+                    generatePawnMovements(_moves , ~pinPoint[pin] , rayPoint[pin] );
                 }
 
             }
