@@ -253,7 +253,7 @@ void initializeNewGameFromStruct(GAME_STATE_STRUCT*);
 void piecePuterWithBoard(uint64_t PIECE_NUMBER, Pieces piece ,uint8_t _chessBoard[64] );
 GAME_STATE_STRUCT copyState();
 void doMultiThreadPerft();
-
+char* getFenFromBoard();
 
 
 void pieceInitializer();
@@ -271,6 +271,7 @@ void generateRookMask();
 
 extern uint64_t fileMask[64];
 extern uint64_t cornerfileMask[64];
-
+// uint64_t getBishopAttack(Square  , uint64_t , uint64_t);
+// uint64_t getRookAttack(Square , uint64_t , uint64_t);
 void generateCornerFileMask();
 void generateFileMask();

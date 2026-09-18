@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#define CLOCK_MONOTONIC 1
 
 
 void* EngineHandler(void* returnT)
@@ -20,6 +20,7 @@ void* EngineHandler(void* returnT)
         {
             pthread_cond_wait(&inputCond, &inputLock);
         }
+
         commandPoint* temp = head;
         head=head->next;
         ququeSize--;
@@ -46,8 +47,6 @@ void* EngineHandler(void* returnT)
             {
 
                 int ret=initializeNewGameFromString(temp->fenString);
-
-
 
                 if(ret==-1){
                     printf("Wrong fen\n");
@@ -85,25 +84,26 @@ void* EngineHandler(void* returnT)
             {
 
                 initializer();
+
                 for(int i =0;i<temp->moveCount; i+=1){
                     uint16_t src  = (uint16_t)((temp->globalPositionMoveOrder[i][0] - 'a') + ((temp->globalPositionMoveOrder[i][1] - '1') * 8));
                     uint16_t dest = (uint16_t)((temp->globalPositionMoveOrder[i][2] - 'a') + ((temp->globalPositionMoveOrder[i][3] - '1') * 8));
-                uint16_t move = src | (dest << 6);
-                if (temp->globalPositionMoveOrder[i][4] != '\0')
-                {
-                    uint16_t promo = 0;
-                    switch (temp->globalPositionMoveOrder[i][4])
+                    uint16_t move = src | (dest << 6);
+                    if (temp->globalPositionMoveOrder[i][4] != '\0')
                     {
-                        case 'q': promo = 1; break;
-                        case 'r': promo = 2; break;
-                        case 'b': promo = 3; break;
-                        case 'n': promo = 4; break;
-                        default:  promo = 0; break;
+                        uint16_t promo = 0;
+                        switch (temp->globalPositionMoveOrder[i][4])
+                        {
+                            case 'q': promo = 1; break;
+                            case 'r': promo = 2; break;
+                            case 'b': promo = 3; break;
+                            case 'n': promo = 4; break;
+                            default:  promo = 0; break;
+                        }
+                        move |= (promo << 12);
                     }
-                    move |= (promo << 12);
-                }
-                makeMove(move);
 
+                    makeMove(move);
                 }
 
 
@@ -143,10 +143,7 @@ void* EngineHandler(void* returnT)
                 fflush(stdout);
                 break;
             }
-            case 99:
-            {
 
-            }
             case  CMD_TYPE_PRINTBOARD:
             {
                 pthread_mutex_unlock(&inputLock);

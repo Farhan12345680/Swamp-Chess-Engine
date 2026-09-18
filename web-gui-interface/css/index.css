@@ -13,7 +13,7 @@ body{
     justify-content: center;
     align-items: center;
     gap: 10vh;
-    
+
 }
 
 a{
@@ -42,4 +42,5 @@ img{
 
 h1{
     font-size: 3rem;
+    text-align: center;
 }

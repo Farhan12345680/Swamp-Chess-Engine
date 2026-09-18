@@ -23,6 +23,7 @@ uint16_t goSearch()
         makeMove(moves.moves[i]);
         double temp = evaulateThisPosition();
 
+
         if( (evaluationValue < ((GAME_STATE[SIDE]==6 ? 1 :-1 )  * temp))){
             evaluationValue= (GAME_STATE[SIDE]==6 ? 1 :-1 ) * temp;
             returnValue=moves.moves[i];

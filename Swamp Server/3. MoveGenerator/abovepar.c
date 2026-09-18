@@ -186,7 +186,7 @@ const int rookRelevantBits[64] = {
 };
 
 // --------------------------------------------
-// ----------- basic PIECE attack generation --
+// --------- basic PIECE attack generation ----
 // --------------------------------------------
 
 static inline uint64_t getBishopAttack(Square square, uint64_t occupancy, uint64_t sameSideOccupancy)
@@ -204,7 +204,7 @@ static inline uint64_t getRookAttack(Square square, uint64_t occupancy, uint64_t
 }
 
 
-static inline uint64_t getQueenAttack(Square square, uint64_t occupancy, uint64_t sameSideOccupancy)
+inline uint64_t getQueenAttack(Square square, uint64_t occupancy, uint64_t sameSideOccupancy)
 {
     return getBishopAttack(square, occupancy, sameSideOccupancy) | getRookAttack(square, occupancy, sameSideOccupancy);
 }

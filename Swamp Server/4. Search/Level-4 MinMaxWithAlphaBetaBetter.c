@@ -12,7 +12,7 @@ typedef struct moveValue {
 } moveValue;
 
 
-
+//move sorting for better alpha beta move ordering
 static void sortMoves(MoveList *moves, int maxNode)
 {
     if (moves->index <= 1)
@@ -36,7 +36,7 @@ static void sortMoves(MoveList *moves, int maxNode)
         makeMove(moves->moves[i]);
 
         scoredMoves[i].move = moves->moves[i];
-        scoredMoves[i].evaluation = evaulateThisPosition(moves->index);
+        scoredMoves[i].evaluation = evaulateThisPosition();
 
         memcpy(GAME_STATE,
                tempGameState,
@@ -128,7 +128,7 @@ moveValue minGame(int depth, double alpha, double beta)
 
             makeMove(moves.moves[i]);
 
-            double temp = evaulateThisPosition(moves.index);
+            double temp = evaulateThisPosition();
 
             if (evaluationValue >= temp) {
 
@@ -241,7 +241,7 @@ moveValue maxGame(int depth, double alpha, double beta)
 
             makeMove(moves.moves[i]);
 
-            double temp = evaulateThisPosition(moves.index);
+            double temp = evaulateThisPosition();
 
             if (evaluationValue <= temp) {
 

@@ -8,16 +8,16 @@ JSOURCES = ./"6. Server"/Server.java
 OUTPUT = Swamp.out
 DEBUGFLAGS = -g1 -std=c17 -D_POSIX_C_SOURCE=200809L
 
-
 ####################################################
 ################### FILE SOURCES ###################
 ####################################################
 
 
-SEARCH = ./"4. Search"/"Level-3 MinMaxWithAlphaBeta.c" -DGREEDY
-EVALUTATION = ./"5. Evaluation"/evaluation2.c
+SEARCH = ./"4. Search"/"Level-4 MinMaxWithAlphaBetaBetter.c" -DGREEDY
+EVALUTATION = ./"5. Evaluation"/evaluationBetter.c
 MOVEGENERATOR = ./"3. MoveGenerator"/abovepar.c
 
+WASM_SOURCES = ./library/SwampLibrary.c ./"2. Board"/board.c ./"1. core"/core.c $(SEARCH) $(EVALUTATION) $(MOVEGENERATOR)
 
 
 ####################################################
@@ -51,7 +51,7 @@ ifeq ($(findstring MINGW,$(U_NAME)),MINGW)
 endif
 
 ifeq ($(search),greedy)
-	SEARCH = ./"4. Search"/greedySearch.c -DGREEDY
+	SEARCH = ./"4. Search"/Level-1 greedySearch.c -DGREEDY
 endif
 
 
@@ -85,3 +85,42 @@ run: defaultBuild
 debug:
 	$(CC) $(DEBUGFLAGS) $(SOURCES) $(MOVEGENERATOR) $(SEARCH) $(EVALUTATION) -o $(OUTPUT)
 	$(JCC) $(JSOURCES)
+
+
+# emscripten is needed
+
+
+library1:
+	emcc \
+		./library/SwampLibrary.c ./"2. Board"/board.c ./"1. core"/core.c ./"4. Search"/"Level-1 greedySearch.c" ./"5. Evaluation"/evaluation2.c ./"3. MoveGenerator"/abovepar.c \
+	    -O3 \
+	    -sWASM=1 \
+	    -sMODULARIZE=1 \
+	    -sEXPORT_ES6=1 \
+	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
+	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
+	    -o ../web-gui-interface/js/greedy/swampGreedy.js
+
+library2:
+	emcc \
+		./library/SwampLibrary.c ./"2. Board"/board.c ./"1. core"/core.c ./"4. Search"/"Level-2 MinMax.c" ./"5. Evaluation"/evaluation2.c ./"3. MoveGenerator"/abovepar.c \
+	    -O3 \
+	    -sWASM=1 \
+	    -sMODULARIZE=1 \
+	    -sEXPORT_ES6=1 \
+	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
+	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
+	    -o ../web-gui-interface/js/min_max/swampMinMax.js
+
+library3:
+	emcc \
+		./library/SwampLibrary.c ./"2. Board"/board.c ./"1. core"/core.c ./"4. Search"/"Level-4 MinMaxWithAlphaBetaBetter.c" ./"5. Evaluation"/evaluation2.c ./"3. MoveGenerator"/abovepar.c \
+	    -O3 \
+	    -sWASM=1 \
+	    -sMODULARIZE=1 \
+	    -sEXPORT_ES6=1 \
+	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
+	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
+	    -o ../web-gui-interface/js/alphaBeta/swampMinMaxAlphaBeta.js
+
+wasm: library1 library2 library3

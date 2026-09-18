@@ -195,7 +195,7 @@ static inline uint64_t getRookAttack(Square square, uint64_t occupancy, uint64_t
     return rookAttacks[square][_idx] & (~sameSideOccupancy);
 }
 
-static inline uint64_t getQueenAttack(Square square, uint64_t occupancy, uint64_t sameSideOccupancy)
+uint64_t getQueenAttack(Square square, uint64_t occupancy, uint64_t sameSideOccupancy)
 {
     return getBishopAttack(square, occupancy, sameSideOccupancy) | getRookAttack(square, occupancy, sameSideOccupancy);
 }
@@ -637,7 +637,7 @@ static inline void doEnpassant( Square _pawnSrc, Square _pawnDest, Square _origi
     uint64_t _srcMask = 1ULL << _pawnSrc;
     uint64_t _originDestMask = 1ULL << _originDist;
     uint64_t _gMask = mask | _srcMask;
-    
+
 
     int srcPiece = helperArr[_chessBoard[_pawnSrc]][0];
     int srcColor = helperArr[_chessBoard[_pawnSrc]][1];
@@ -993,7 +993,7 @@ static inline void generateBishopMoveList(MoveList *    _moveList )
             attacks &= attacks - 1;
             uint64_t capturedColor = helperArr[_chessBoard[dest]][1];
             uint64_t capturedPiece = helperArr[_chessBoard[dest]][0];
-            
+
             doMove(src, dest, _promotion, _srcColorOccupancy, _srcPieceOccupancy,
                    capturedColor, capturedPiece, _moveList);
         }
@@ -1298,7 +1298,7 @@ static inline void generateBlackKnightMoveList(MoveList *   _moveList)
 
 static inline void generateEnpassantMoves(MoveList *   _moveList)
 {
-    
+
 
     Square enPassant = (Square)GAME_STATE[ENPASSANT_SQUARE];
     if (enPassant == NS) return;

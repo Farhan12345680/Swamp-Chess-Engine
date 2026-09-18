@@ -1,4 +1,5 @@
 #include "../1. core/board.h"
+#include <string.h>
 #include <threads.h>
 
 extern thread_local uint64_t GAME_STATE[24];
@@ -176,6 +177,144 @@ void printBoard()
     printf("HALF Move %d\n",(int)GAME_STATE[NUMBER_HALF_MOVES]);
 
 }
+
+
+char* getFenFromBoard(){
+
+    static char moveArr[1024];
+    memset(moveArr, 0, sizeof(moveArr));
+
+    int currentIndex = 0;
+
+    for(int rank = 7; rank >= 0; rank--){
+
+        int counter = 0;
+
+        for(int file = 0; file < 8; file++){
+
+            int sq = rank * 8 + file;
+
+            switch (_chessBoard[sq])
+            {
+                case BLACK_ROOK:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='r'; counter=0; break;
+                case BLACK_KNIGHT: if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='n'; counter=0; break;
+                case BLACK_BISHOP: if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='b'; counter=0; break;
+                case BLACK_QUEEN:  if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='q'; counter=0; break;
+                case BLACK_KING:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='k'; counter=0; break;
+                case BLACK_PAWN:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='p'; counter=0; break;
+
+                case WHITE_ROOK:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='R'; counter=0; break;
+                case WHITE_KNIGHT: if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='N'; counter=0; break;
+                case WHITE_BISHOP: if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='B'; counter=0; break;
+                case WHITE_QUEEN:  if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='Q'; counter=0; break;
+                case WHITE_KING:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='K'; counter=0; break;
+                case WHITE_PAWN:   if(counter) moveArr[currentIndex++]='0'+counter; moveArr[currentIndex++]='P'; counter=0; break;
+
+                default:
+                    counter++;
+                    break;
+            }
+        }
+
+        if(counter){
+            moveArr[currentIndex++] = '0' + counter;
+        }
+
+        if(rank != 0){
+            moveArr[currentIndex++] = '/';
+        }
+    }
+
+    moveArr[currentIndex++] = ' ';
+
+    moveArr[currentIndex++] = GAME_STATE[SIDE] ? 'b' : 'w';
+
+    moveArr[currentIndex++] = ' ';
+
+    if(GAME_STATE[CASTLING_AVAILABLE] & 0b1000)
+        moveArr[currentIndex++] = 'K';
+
+    if(GAME_STATE[CASTLING_AVAILABLE] & 0b0100)
+        moveArr[currentIndex++] = 'Q';
+
+    if(GAME_STATE[CASTLING_AVAILABLE] & 0b0010)
+        moveArr[currentIndex++] = 'k';
+
+    if(GAME_STATE[CASTLING_AVAILABLE] & 0b0001)
+        moveArr[currentIndex++] = 'q';
+
+    if(!(GAME_STATE[CASTLING_AVAILABLE])){
+        moveArr[currentIndex++] = '-';
+    }
+
+    moveArr[currentIndex++] = ' ';
+
+    if(GAME_STATE[ENPASSANT_SQUARE] == ES){
+        moveArr[currentIndex++] = '-';
+    }
+    else{
+        Square sq = GAME_STATE[ENPASSANT_SQUARE];
+        moveArr[currentIndex++] = (sq % 8) + 'a';
+        moveArr[currentIndex++] = (sq / 8) + '1';
+    }
+
+    moveArr[currentIndex++] = ' ';
+
+    int temp = GAME_STATE[NUMBER_HALF_MOVES];
+
+    if(temp == 0){
+        moveArr[currentIndex++] = '0';
+    }
+    else{
+        int startIndex = currentIndex;
+        int lastIndex;
+
+        while(temp){
+            lastIndex = currentIndex;
+            moveArr[currentIndex++] = temp % 10 + '0';
+            temp /= 10;
+        }
+
+        while(startIndex < lastIndex){
+            char t = moveArr[lastIndex];
+            moveArr[lastIndex] = moveArr[startIndex];
+            moveArr[startIndex] = t;
+            startIndex++;
+            lastIndex--;
+        }
+    }
+
+    moveArr[currentIndex++] = ' ';
+
+    temp = GAME_STATE[NUMBER_FULL_MOVES];
+
+    if(temp == 0){
+        moveArr[currentIndex++] = '0';
+    }
+    else{
+        int startIndex = currentIndex;
+        int lastIndex;
+
+        while(temp){
+            lastIndex = currentIndex;
+            moveArr[currentIndex++] = temp % 10 + '0';
+            temp /= 10;
+        }
+
+        while(startIndex < lastIndex){
+            char t = moveArr[lastIndex];
+            moveArr[lastIndex] = moveArr[startIndex];
+            moveArr[startIndex] = t;
+            startIndex++;
+            lastIndex--;
+        }
+    }
+
+    moveArr[currentIndex] = '\0';
+
+    return moveArr;
+}
+
 
 uint64_t perft(int depth )
 {
@@ -1169,7 +1308,7 @@ GAME_STATE_STRUCT copyState()
 }
 
 
-void doMultiThreadPerft(void* address )
+void doMultiThreadPerft(void * address)
 {
     GAME_STATE_STRUCT_WITH_DEPTH data = *((GAME_STATE_STRUCT_WITH_DEPTH*)address);
     memcpy(GAME_STATE ,data.state.GAME_STATE, 24*sizeof(uint64_t));
@@ -1206,10 +1345,6 @@ void doMultiThreadPerft(void* address )
 
     }
 }
-
-
-
-
 
 
 void generateRookMask()
