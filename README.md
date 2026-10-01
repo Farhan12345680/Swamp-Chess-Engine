@@ -31,7 +31,11 @@
 
 #### web-gui-interface
 
-- copy the path of the index.html file and paste on browser
+- currently accesssing the the html files locally needs to use a python server , use python http.server for spinning up a quick server for local access other wise the website can be used to access the different versions of engine
+
+> [!important]
+> the engines are now hosted online @ https://farhan12345680.github.io/Swamp-Chess-Engine/
+
 
 > [!important]
 > the C code invokes GCC (GNU C Compiler) compiler specific codes, building the server with other compilers will most probably not work.
