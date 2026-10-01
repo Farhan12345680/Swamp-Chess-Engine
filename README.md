@@ -1,7 +1,5 @@
 # Swamp-Chess-Engine
 
-Swamp is a chess engine, created to fulfill the project requirement of the course CSE 3812 at UIU .
-<br>
 
 > [!important]
 > the Engine 1.0 with has been developed , check build instructions for building. The build steps do require make for building && gcc with "C 17" available along with posix threads
