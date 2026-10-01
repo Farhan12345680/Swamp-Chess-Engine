@@ -6,7 +6,7 @@
 
 
 <p align="center">
-  <img src="./web-gui-interface/images/swamp.png" alt="Swamp Chess Engine" width="300">
+  <img src="./images/swamp.png" alt="Swamp Chess Engine" width="300">
 </p>
 
 ### Features
@@ -42,5 +42,5 @@
 ### ELO graph
 
 <p align="center">
-  <img src="./web-gui-interface/images/No Image.jpg" alt="No Image Currently" width="300">
+  <img src="./images/rating_graph.png" alt="No Image Currently" width="300">
 </p>
