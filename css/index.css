@@ -1,46 +1,257 @@
 *{
-    margin  :0px;
-    padding :0px;
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-
 
 body{
-    width: 99vw;
-    height: 99vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    background: radial-gradient(circle at top, #3c6448 0%, #223a2a 70%);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    color: #eafbe0;
+}
+
+/* ---------- HEADER ---------- */
+header{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10vh;
-
+    padding: 14px 6vw;
+    background: rgba(30, 55, 38, 0.85);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-a{
+.brand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #a8e6a1;
+}
 
-    width: max(23vw , 300px);
-    padding: 10px 0px;
-    background: rgb(245, 140, 245);
-    text-align: center;
-    text-justify: center;
+.brand-icon{
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+nav{
+    display: flex;
+    gap: 14px;
+}
+
+nav a{
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid #4f8a3d;
+    border-radius: 8px;
+    color: #d3ffcf;
     text-decoration: none;
-    font-size: 1.4rem;
-    font-family: 'Courier New', Courier, monospace;
-    border: 1px solid white;
+    font-size: 0.95rem;
+    transition: background 0.2s ease, transform 0.15s ease;
 }
 
-div{
+nav a:hover,
+nav a.active{
+    background: #467235;
+    transform: translateY(-2px);
+}
+
+/* ---------- HERO (index.html) ---------- */
+.hero{
+    flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 6vh 6vw 8vh;
+    gap: 18px;
 }
 
-img{
-    width: max(20vw , 300px) ;
-
+.logo{
+    width: min(220px, 40vw);
+    margin-top: 2vh;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.55));
+    animation: float 4s ease-in-out infinite;
 }
 
+@keyframes float{
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-10px); }
+}
 
 h1{
-    font-size: 3rem;
+    font-family: 'Fredoka', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 2px;
+    color: #eafbe0;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+.tagline{
+    max-width: 560px;
+    color: #bcd9b5;
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+.cta{
+    margin-top: 10px;
+    padding: 14px 36px;
+    background: linear-gradient(135deg, #4f8a3d, #2f5522);
+    color: #f4fff0;
+    text-decoration: none;
+    font-size: 1.15rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid #6fae57;
+    box-shadow: 0 6px 16px rgba(70, 114, 53, 0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta:hover{
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 10px 22px rgba(70, 114, 53, 0.55);
+}
+
+/* feature cards on the home page */
+.features{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 5vh;
+    max-width: 900px;
+}
+
+.feature-card{
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 22px;
+    width: 220px;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.feature-card:hover{
+    transform: translateY(-6px);
+    background: rgba(255,255,255,0.07);
+}
+
+.feature-icon{
+    font-size: 1.8rem;
+}
+
+.feature-card h3{
+    font-family: 'Fredoka', sans-serif;
+    margin: 10px 0 6px;
+    color: #cdeec6;
+    font-size: 1.05rem;
+}
+
+.feature-card p{
+    font-size: 0.85rem;
+    color: #a7c7a0;
+    line-height: 1.4;
+}
+
+/* ---------- MENU (swampMenu.html) ---------- */
+.menu{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    padding: 7vh 6vw;
+    gap: 14px;
+}
+
+.menu h1{
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.menu-cards{
+    margin-top: 4vh;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px;
+    width: 100%;
+    max-width: 900px;
+}
+
+.menu-card{
+    flex: 1 1 220px;
+    max-width: 260px;
+    background: linear-gradient(160deg, rgba(70,114,53,0.25), rgba(10,24,14,0.6));
+    border: 1px solid #4f8a3d;
+    border-radius: 14px;
+    padding: 26px 18px;
+    text-decoration: none;
+    color: #eafbe0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.menu-card:hover{
+    transform: translateY(-6px);
+    background: linear-gradient(160deg, rgba(70,114,53,0.45), rgba(10,24,14,0.7));
+    box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+}
+
+.menu-card .level{
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8fd47f;
+}
+
+.menu-card .engine-name{
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.menu-card .engine-desc{
+    font-size: 0.85rem;
+    color: #b6d4ae;
+    line-height: 1.4;
+}
+
+/* ---------- FOOTER ---------- */
+footer{
+    text-align: center;
+    padding: 16px;
+    font-size: 0.8rem;
+    color: #7fa377;
+    background: rgba(10, 24, 14, 0.85);
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 600px){
+    header{
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 4vw;
+    }
+    nav a{
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    .menu-cards{
+        flex-direction: column;
+        align-items: center;
+    }
 }
