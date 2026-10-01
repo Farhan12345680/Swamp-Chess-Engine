@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <title>Play Swamp</title>
     <link rel="stylesheet" href="./css/play_swamp.css">
 </head>
 <body>
     <header>
-
-        <a class="navButton" href="./index.html">Home</a>
-        <a class="navButton" href="./swampMenu.html">Play Swamp</a>
-
+        <div class="brand">
+            <img src="./images/swamp.png" alt="Swamp logo" class="brand-icon">
+            <span>SWAMP</span>
+        </div>
+        <nav>
+            <a class="navButton" href="./index.html">Home</a>
+            <a class="navButton active" href="./swampMenu.html">Play Swamp</a>
+        </nav>
     </header>
 
     <div id="gameScene">
@@ -29,6 +35,7 @@
             <button id="prev">prev</button>
             <button id="next">next</button>
             <button id="restart">restart</button>
+            <button id="toggleEval">toggle evaluation</button>
 
         </div>
 
@@ -37,7 +44,14 @@
 
 
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const evalHolder = document.querySelector(".eval_holder");
+            const toggleEvalBtn = document.querySelector("#toggleEval");
 
+            toggleEvalBtn.addEventListener("click", () => {
+                evalHolder.classList.toggle("show");
+            });
+        });
     </script>
 
         <script src="./js/chess_board.js" ></script>

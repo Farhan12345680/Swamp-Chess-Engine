@@ -1,32 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/index.css">
-
-    <title>Swamp Chess Engine Menu</title>
-
+    <title>Swamp Chess Engine — Menu</title>
 </head>
 <body>
 
     <header>
-
-        <a href="./index.html">Home</a>
-        <a href="./swampMenu.html">Play Swamp</a>
-
+        <div class="brand">
+            <img src="./images/swamp.png" alt="Swamp logo" class="brand-icon">
+            <span>SWAMP</span>
+        </div>
+        <nav>
+            <a href="./index.html">Home</a>
+            <a href="./swampMenu.html" class="active">Play Swamp</a>
+        </nav>
     </header>
 
-    <div>
-    <a href="./play_swamp0.html">Play Againsts SWAMP 0</a>
-    </div>
-    <div>
-    <a href="./play_swamp1.html">Play Againsts SWAMP 1</a>
-    </div>
-    <div>
-    <a href="./play_swamp2.html">Play Againsts SWAMP 2</a>
-    </div>
+    <main class="menu">
+        <h1>Choose Your Opponent</h1>
+        <p class="tagline">Pick a difficulty level to start the match.</p>
 
+        <div class="menu-cards">
+            <a href="./play_swamp0.html" class="menu-card">
+                <span class="level">Level 0</span>
+                <span class="engine-name">Greedy Search</span>
+                <span class="engine-desc">Fast, grabs the best immediate move.</span>
+            </a>
+            <a href="./play_swamp1.html" class="menu-card">
+                <span class="level">Level 1</span>
+                <span class="engine-name">MinMax</span>
+                <span class="engine-desc">Looks a few moves ahead.</span>
+            </a>
+            <a href="./play_swamp2.html" class="menu-card">
+                <span class="level">Level 2</span>
+                <span class="engine-name">MinMax + Alpha‑Beta</span>
+                <span class="engine-desc">Deeper, smarter, harder to beat.</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>Swamp Chess Engine &copy; 2026 — built with ♟ from scratch</p>
+    </footer>
 
 </body>
 </html>
