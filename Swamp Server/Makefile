@@ -99,7 +99,7 @@ library1:
 	    -sEXPORT_ES6=1 \
 	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
 	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
-	    -o ../web-gui-interface/js/greedy/swampGreedy.js
+	    -o ../js/greedy/swampGreedy.js
 
 library2:
 	emcc \
@@ -110,7 +110,7 @@ library2:
 	    -sEXPORT_ES6=1 \
 	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
 	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
-	    -o ../web-gui-interface/js/min_max/swampMinMax.js
+	    -o ../js/min_max/swampMinMax.js
 
 library3:
 	emcc \
@@ -121,6 +121,6 @@ library3:
 	    -sEXPORT_ES6=1 \
 	    -sEXPORTED_FUNCTIONS='["_malloc","_free","_init","_initFromFen","_doMove","_goSearchNextBestMove","_isValidMove","_getFenFromBoard"]' \
 	    -sEXPORTED_RUNTIME_METHODS='["UTF8ToString","stringToUTF8","lengthBytesUTF8"]' \
-	    -o ../web-gui-interface/js/alphaBeta/swampMinMaxAlphaBeta.js
+	    -o ../js/alphaBeta/swampMinMaxAlphaBeta.js
 
 wasm: library1 library2 library3

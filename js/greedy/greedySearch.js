@@ -46,9 +46,10 @@ const fenPieces = {
 };
 
 
-let piece = null;
 let selectedSrc = "";
+let selectedPiece = "";
 let engineThinking = false;
+let humanSide = "w";
 
 
 class GameNode {
@@ -68,9 +69,6 @@ function createPiece(pieceName) {
     const child = document.createElement("img");
 
     child.src = pieceImages[pieceName];
-    child.draggable = true;
-
-    child.addEventListener("dragstart", dragStart);
 
     return child;
 }
@@ -84,6 +82,7 @@ function renderFen(fenString) {
     document.querySelectorAll(".square").forEach(e => {
         e.innerHTML = "";
         e.piece = "es";
+        e.classList.remove("selected");
     });
 
     for (let rank = 7; rank >= 0; rank--) {
@@ -119,23 +118,6 @@ function renderFen(fenString) {
 
 function createInitialChessGame() {
     renderFen(START_FEN);
-}
-
-
-function dragStart(e) {
-
-    if (engineThinking) {
-        e.preventDefault();
-        return;
-    }
-
-    piece = e.currentTarget;
-    selectedSrc = piece.parentNode.pos;
-}
-
-
-function dragOver(e) {
-    e.preventDefault();
 }
 
 
@@ -187,43 +169,95 @@ function encodeMove(moveString, pieceName) {
 }
 
 
-async function drop(e) {
+function clearSelection() {
 
-    e.preventDefault();
+    document.querySelectorAll(".square").forEach(e => {
+        e.classList.remove("selected");
+    });
 
-    if (!piece || engineThinking) {
+    selectedSrc = "";
+    selectedPiece = "";
+}
+
+
+function getSquarePieceColor(pieceName) {
+
+    if (!pieceName || pieceName === "es") {
+        return null;
+    }
+
+    if (pieceName.charAt(0) === "w") {
+        return "w";
+    }
+
+    return "b";
+}
+
+
+async function squareClick(e) {
+
+    if (engineThinking) {
         return;
     }
 
-    const parent = piece.parentNode;
+    const square = e.currentTarget;
+    const destination = square.pos;
+    const destinationPiece = square.piece;
 
-    if (!parent) {
-        piece = null;
-        selectedSrc = "";
+    if (!selectedSrc) {
+
+        if (!destinationPiece || destinationPiece === "es") {
+            return;
+        }
+
+        const pieceColor = getSquarePieceColor(destinationPiece);
+
+        if (pieceColor !== humanSide) {
+            return;
+        }
+
+        selectedSrc = destination;
+        selectedPiece = destinationPiece;
+
+        square.classList.add("selected");
+
         return;
     }
 
-    const source = parent.pos;
-    const destination = e.currentTarget.pos;
-
-    if (source === destination) {
-        piece = null;
-        selectedSrc = "";
+    if (destination === selectedSrc) {
+        clearSelection();
         return;
     }
 
-    const moveString = source + destination;
-    const move = encodeMove(moveString, parent.piece);
+    const destinationColor = getSquarePieceColor(destinationPiece);
+
+    if (destinationColor === humanSide) {
+
+        clearSelection();
+
+        selectedSrc = destination;
+        selectedPiece = destinationPiece;
+
+        square.classList.add("selected");
+
+        return;
+    }
+
+    const moveString = selectedSrc + destination;
+    const move = encodeMove(moveString, selectedPiece);
 
     try {
 
         const valid = await isValidMove(move);
 
         if (!valid) {
-            piece = null;
-            selectedSrc = "";
+            clearSelection();
             return;
         }
+
+        engineThinking = true;
+
+        clearSelection();
 
         await doMove(move);
 
@@ -232,11 +266,6 @@ async function drop(e) {
         addGameNode(humanFen);
 
         renderFen(humanFen);
-
-        piece = null;
-        selectedSrc = "";
-
-        engineThinking = true;
 
         const engineMove = await goSearchNextBestMove();
 
@@ -266,8 +295,7 @@ async function drop(e) {
     finally {
 
         engineThinking = false;
-        piece = null;
-        selectedSrc = "";
+        clearSelection();
     }
 }
 
@@ -275,8 +303,10 @@ async function drop(e) {
 function add_functionality() {
 
     document.querySelectorAll(".square").forEach(e => {
-        e.addEventListener("dragover", dragOver);
-        e.addEventListener("drop", drop);
+
+        e.style.cursor = "pointer";
+
+        e.addEventListener("click", squareClick);
     });
 }
 
@@ -314,15 +344,15 @@ async function restartGame() {
 
     try {
 
+        humanSide = "w";
+
         await initialize();
         await initFromFen(START_FEN);
 
         currentNode = new GameNode(START_FEN);
 
+        clearSelection();
         renderFen(START_FEN);
-
-        piece = null;
-        selectedSrc = "";
 
     }
     catch (err) {
@@ -333,6 +363,7 @@ async function restartGame() {
     finally {
 
         engineThinking = false;
+        clearSelection();
     }
 }
 
@@ -344,6 +375,8 @@ async function previousPosition() {
     }
 
     currentNode = currentNode.prev;
+
+    clearSelection();
 
     await loadFen(currentNode.fenString);
 }
@@ -357,6 +390,8 @@ async function nextPosition() {
 
     currentNode = currentNode.next;
 
+    clearSelection();
+
     await loadFen(currentNode.fenString);
 }
 
@@ -366,13 +401,12 @@ add_functionality();
 
 
 const restart = document.querySelector("#restart");
-const prev = document.querySelector("#prev");
-const next = document.querySelector("#next");
+
+const playBlack = document.querySelector("#playBlack");
+const playWhite = document.querySelector("#playWhite");
 
 
 restart.addEventListener("click", restartGame);
-prev.addEventListener("click", previousPosition);
-next.addEventListener("click", nextPosition);
 
 
 await initialize();
@@ -381,3 +415,59 @@ await initFromFen(START_FEN);
 currentNode = new GameNode(START_FEN);
 
 renderFen(START_FEN);
+
+
+playBlack.onclick = async () => {
+
+    if (engineThinking) {
+        return;
+    }
+
+
+    restartGame();
+    
+    
+    try {
+
+        engineThinking = true;
+        humanSide = "b";
+
+        const engineMove = await goSearchNextBestMove();
+
+        if (!engineMove || engineMove === "0000") {
+            return;
+        }
+
+        const engineEncodedMove = encodeMove(
+            engineMove,
+            null
+        );
+
+        await doMove(engineEncodedMove);
+
+        const engineFen = await getFenStringFromGame();
+
+        addGameNode(engineFen);
+
+        renderFen(engineFen);
+
+    }
+    catch (err) {
+
+        console.log(err);
+
+    }
+    finally {
+
+        engineThinking = false;
+        clearSelection();
+    }
+};
+
+
+playWhite.onclick = async () => {
+
+    await restartGame();
+
+    humanSide = "w";
+};

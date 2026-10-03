@@ -3,26 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/index.css">
 
     <title>Swamp Chess Engine</title>
+
+    <link rel="stylesheet" href="./css/index.css">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #111111;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        header a {
+            padding: 11px 22px;
+            background: #006A4E;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 106, 78, 0.35);
+            transition: 0.2s ease;
+        }
+
+        header a:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+            box-shadow: 0 6px 14px rgba(0, 106, 78, 0.45);
+        }
+
+        main {
+            width: 92%;
+            max-width: 520px;
+            margin: 60px auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 30px;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        img {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            display: block;
+            margin-bottom: 35px;
+            border-radius: 14px;
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        main div {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        main div a {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 15px 20px;
+            background: #006A4E;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            box-shadow: 0 5px 14px rgba(0, 106, 78, 0.35);
+            transition: 0.2s ease;
+        }
+
+        main div a:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+            box-shadow: 0 8px 18px rgba(0, 106, 78, 0.45);
+        }
+    </style>
 </head>
+
 <body>
 
-    <header>
-
-        <a href="./index.html">Home</a>
-        <a href="./swampMenu.html">Play Swamp</a>
-
-    </header>
 
 
-    <h1>SWAMP Chess Engine</h1>
-    <img src="./images/swamp.png" alt="SWAMP LOGO">
-    <div>
-    <a href="./swampMenu.html">Play Againsts SWAMP</a>
-    </div>
+    <main>
+        <h1>SWAMP Chess Engine</h1>
 
+        <img src="./images/swamp.png" alt="SWAMP LOGO">
+
+        <div>
+            <a href="./play_swamp0.html">Play Against SWAMP 0</a>
+        </div>
+
+        <div>
+            <a href="./play_swamp1.html">Play Against SWAMP 1</a>
+        </div>
+
+        <div>
+            <a href="./play_swamp2.html">Play Against SWAMP 2</a>
+        </div>
+    </main>
 
 </body>
 </html>

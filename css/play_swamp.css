@@ -1,179 +1,231 @@
-*{
+* {
     margin: 0px;
     padding: 0px;
-
+    box-sizing: border-box;
 }
 
-header{
+body {
+    background-color: #111111;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+}
+
+header {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap:10;
-    padding-top:5px;
+    gap: 15px;
+    padding: 18px 20px;
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-.navButton{
-    box-sizing: border-box;
-    width: 10%;
-    margin-left:10px ;
-    margin-right: 10px;
+.navButton {
+    width: 140px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    background-color: #006A4E;
+    color: #ffffff;
     font-size: 1rem;
-    background-color: mediumpurple;
-    text-justify: center;
-    justify-content: center;
-    align-content: center;
+    font-weight: 600;
     text-decoration: none;
     text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 106, 78, 0.35);
+    transition: 0.2s ease;
 }
 
+.navButton:hover {
+    background-color: #007f5f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 106, 78, 0.45);
+}
 
-#gameScene{
+.navButton:active {
+    transform: translateY(0px);
+}
+
+#gameScene {
     width: 99vw;
-    height: 99vh;
+    height: calc(100vh - 75px);
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-
 }
 
-#chess_board{
+#chess_board {
     display: grid;
-    grid-template-rows: repeat(8, max(5vw , 60px)) 10px;
-    grid-template-columns: 10px repeat(8, max(5vw , 60px)) ;
-
+    grid-template-rows: repeat(8, max(5vw, 60px)) 10px;
+    grid-template-columns: 10px repeat(8, max(5vw, 60px));
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
 }
-#second_panel{
-    margin-left: 10vw;
+
+#second_panel {
+    margin-left: 8vw;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 30vw;
-
+    max-width: 400px;
 }
-#button_holder{
+
+#button_holder {
     display: flex;
     flex-direction: column;
     width: inherit;
 }
-.eval_holder{
+
+.eval_holder {
     font-size: 4rem;
     text-align: center;
     padding: 10px 0px;
-    color: whitesmoke;
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #467235;
+    color: #ffffff;
+    font-family: "Courier New", Courier, monospace;
+    background-color: #006A4E;
     display: none !important;
     width: inherit;
+    border-radius: 10px;
+    box-shadow: 0 5px 14px rgba(0, 106, 78, 0.35);
 }
 
-
-button{
+button {
     font-size: 1.5rem;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
     margin: 5px 0px;
-    padding: 10px 0px;
-    background-color: #467235;
-    color: #D3D4C0;
+    padding: 12px 0px;
+    background-color: #006A4E;
+    color: #ffffff;
     font-weight: bolder;
     border: none;
+    border-radius: 8px;
     width: inherit;
+    cursor: pointer;
+    box-shadow: 0 5px 14px rgba(0, 106, 78, 0.35);
+    transition: 0.2s ease;
 }
 
-img{
+button:hover {
+    background-color: #007f5f;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 106, 78, 0.45);
+}
+
+button:active {
+    background-color: #00563f;
+    transform: translateY(0px);
+}
+
+img {
     width: 60px;
 }
 
-.square{
-    display:flex;
+.square {
+    display: flex;
     justify-content: center;
     align-items: center;
 }
 
-button:hover{
-        background-color: #264918;
-}
-button:active{
-        background-color: #689950;
-    transition: background-color 0.1s;
-
-}
-
 @media (max-width: 940px) {
-    #gameScene{
 
+    #gameScene {
+        height: auto;
+        min-height: calc(100vh - 75px);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-
     }
 
+    #second_panel {
+        width: 80vw;
+        max-width: none;
+        margin-left: 0px;
+        margin-top: 20px;
+    }
 
-    #button_holder{
+    #button_holder {
         margin-left: 0px;
         margin-top: 1rem;
         display: grid;
-        grid-template-columns: auto auto auto auto ;
-
-        width: 99vw;
+        grid-template-columns: repeat(3, 1fr);
+        width: 80vw;
         gap: 10px;
     }
 
-    button{
-        width: 20vw;
+    button {
+        width: 100%;
         font-size: 1rem;
-        padding:5px 0px;
+        padding: 10px 0px;
+        margin: 0px;
     }
 
-    .eval_holder{
+    .eval_holder {
         width: 80vw;
         margin-top: 20px;
         font-size: 2rem;
         text-align: center;
         padding: 10px 0px;
-        color: whitesmoke;
-        font-family: 'Courier New', Courier, monospace;
-        background-color: #467235;
-
+        color: #ffffff;
+        background-color: #006A4E;
+        border-radius: 10px;
     }
-
 }
 
-
-.hori_box{
+.hori_box {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 20px ;
+    margin-top: 20px;
     font-size: 1.5rem;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
 }
 
-.vert_box{
-        display: flex;
+.vert_box {
+    display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.5rem;
     margin-right: 20px;
-    font-family: 'Courier New', Courier, monospace;
-
+    font-family: "Courier New", Courier, monospace;
 }
 
-.show{
+.show {
     display: block !important;
 }
 
-
 @media (max-width: 540px) {
-    #chess_board{
+
+    #chess_board {
         display: grid;
-        grid-template-rows: repeat(8, max(5vw , 40px)) 10px;
-        grid-template-columns: 10px repeat(8, max(5vw , 40px)) ;
+        grid-template-rows: repeat(8, max(5vw, 40px)) 10px;
+        grid-template-columns: 10px repeat(8, max(5vw, 40px));
     }
 
-    img{
+    #second_panel {
+        width: 92vw;
+    }
+
+    #button_holder {
+        width: 92vw;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    button {
+        font-size: 0.9rem;
+    }
+
+    img {
         width: 40px;
+    }
+
+    .navButton {
+        width: 120px;
+        padding: 10px 12px;
+        font-size: 0.9rem;
     }
 }
