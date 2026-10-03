@@ -408,8 +408,6 @@ const playWhite = document.querySelector("#playWhite");
 
 
 restart.addEventListener("click", restartGame);
-prev.addEventListener("click", previousPosition);
-next.addEventListener("click", nextPosition);
 
 
 await initialize();
